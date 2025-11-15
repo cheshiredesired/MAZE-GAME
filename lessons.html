@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+  <title>Select Level - Maze Quiz Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-image: url('lessonbackground.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: #ffffff;
+      overflow-x: hidden;
+      overflow-y: auto;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      animation: fadeInDown 0.6s ease-out;
+    }
+    
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .header h1 {
+      font-size: 36px;
+      color: #ffffff;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+      margin-bottom: 10px;
+    }
+    
+    .header p {
+      font-size: 18px;
+      color: #e0e7ff;
+      text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    .levels-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1000px;
+      margin-bottom: 30px;
+    }
+    
+    .level-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 25px;
+      border: 3px solid #ffffff;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn 0.5s ease-out forwards;
+      opacity: 0;
+    }
+    
+    @keyframes cardSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .level-card:nth-child(1) { animation-delay: 0.1s; }
+    .level-card:nth-child(2) { animation-delay: 0.2s; }
+    .level-card:nth-child(3) { animation-delay: 0.3s; }
+    .level-card:nth-child(4) { animation-delay: 0.4s; }
+    .level-card:nth-child(5) { animation-delay: 0.5s; }
+    .level-card:nth-child(6) { animation-delay: 0.6s; }
+    
+    .level-card.unlocked {
+      cursor: pointer;
+    }
+    
+    .level-card.unlocked:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 35px rgba(255, 255, 255, 0.6);
+      border-color: #ffffff;
+    }
+    
+    .level-card.unlocked:active {
+      transform: translateY(-2px) scale(0.98);
+    }
+    
+    .level-card.locked {
+      cursor: not-allowed;
+      opacity: 0.6;
+      background: rgba(200, 200, 200, 0.9);
+      border-color: #9ca3af;
+    }
+    
+    .level-number {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333333;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .level-card.locked .level-number {
+      color: #6b7280;
+    }
+    
+    .level-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333333;
+      margin-bottom: 15px;
+      line-height: 1.4;
+    }
+    
+    .level-card.locked .level-title {
+      color: #6b7280;
+    }
+    
+    .level-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    
+    .status-unlocked {
+      color: #10b981;
+    }
+    
+    .status-locked {
+      color: #ef4444;
+    }
+    
+    .lock-icon {
+      font-size: 20px;
+      margin-left: auto;
+    }
+    
+    .level-card.unlocked::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    .level-card.unlocked:hover::before {
+      left: 100%;
+    }
+    
+    .progress-indicator {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #6b7280;
+      font-style: italic;
+    }
+    
+    .level-card.unlocked .progress-indicator {
+      color: #333333;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        justify-content: flex-start;
+        padding: 15px;
+      }
+      
+      .levels-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        width: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .header {
+        margin-bottom: 20px;
+      }
+      
+      .header h1 {
+        font-size: 28px;
+      }
+      
+      .header p {
+        font-size: 16px;
+      }
+      
+      .level-card {
+        padding: 20px;
+      }
+      
+      .level-number {
+        font-size: 20px;
+      }
+      
+      .level-title {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Select Your Level</h1>
+      <p>Complete levels sequentially to unlock new content</p>
+    </div>
+    
+    <div class="levels-grid" id="levelsGrid">
+      <!-- Level cards will be generated dynamically -->
+    </div>
+  </div>
+
+  <script>
+    // Level data
+    const levels = [
+      {
+        number: 1,
+        title: "The Structure of the Earth",
+        unlocked: true
+      },
+      {
+        number: 2,
+        title: "Plate Boundaries",
+        unlocked: false
+      },
+      {
+        number: 3,
+        title: "Seafloor Spreading",
+        unlocked: false
+      },
+      {
+        number: 4,
+        title: "Earthquakes",
+        unlocked: false
+      },
+      {
+        number: 5,
+        title: "Volcanic Eruption",
+        unlocked: false
+      },
+      {
+        number: 6,
+        title: "Tectonic Plate Movements and Their Effects",
+        unlocked: false
+      }
+    ];
+    
+    let levelNavigationTimeout = null;
+    let levelNavigationConfirmed = false;
+    const FALLBACK_DELAY_MS = 600;
+
+    // Allow App Inventor (or tests) to cancel the fallback once it takes over navigation
+    window.confirmLevelNavigation = function() {
+      levelNavigationConfirmed = true;
+      if (levelNavigationTimeout) {
+        clearTimeout(levelNavigationTimeout);
+        levelNavigationTimeout = null;
+      }
+    };
+
+    // Load unlocked levels from App Inventor or localStorage
+    function loadUnlockedLevels() {
+      if (typeof window.AppInventor !== 'undefined') {
+        try {
+          const savedData = window.AppInventor.getWebViewString();
+          if (savedData) {
+            const data = JSON.parse(savedData);
+            if (data.unlockedLevels && Array.isArray(data.unlockedLevels)) {
+              // Update unlocked status based on saved data
+              data.unlockedLevels.forEach(levelNum => {
+                const level = levels.find(l => l.number === levelNum);
+                if (level) {
+                  level.unlocked = true;
+                }
+              });
+            }
+          }
+        } catch (e) {
+          console.error('Error loading unlocked levels:', e);
+        }
+      } else {
+        // Fallback to localStorage for web testing
+        try {
+          // Read completed levels from FINAL_FIXED.html
+          const completedLevels = JSON.parse(localStorage.getItem('completedLevels') || '[]');
+          
+          // Unlock levels based on completed levels
+          // If level N is completed, unlock level N+1
+          completedLevels.forEach(completedLevel => {
+            if (completedLevel >= 1 && completedLevel < 6) {
+              // Unlock the next level
+              const nextLevel = levels.find(l => l.number === completedLevel + 1);
+              if (nextLevel) {
+                nextLevel.unlocked = true;
+              }
+            }
+          });
+          
+          // Also check for direct unlockedLevels (for App Inventor compatibility)
+          const saved = localStorage.getItem('unlockedLevels');
+          if (saved) {
+            const unlockedLevels = JSON.parse(saved);
+            unlockedLevels.forEach(levelNum => {
+              const level = levels.find(l => l.number === levelNum);
+              if (level) {
+                level.unlocked = true;
+              }
+            });
+          }
+        } catch (e) {
+          console.error('Error loading from localStorage:', e);
+        }
+      }
+    }
+    
+    // Save unlocked levels to App Inventor or localStorage
+    function saveUnlockedLevels() {
+      const unlockedLevels = levels.filter(l => l.unlocked).map(l => l.number);
+      
+      if (typeof window.AppInventor !== 'undefined') {
+        const data = {
+          unlockedLevels: unlockedLevels,
+          lastUpdated: Date.now()
+        };
+        window.AppInventor.setWebViewString(JSON.stringify(data));
+      } else {
+        // Fallback to localStorage for web testing
+        localStorage.setItem('unlockedLevels', JSON.stringify(unlockedLevels));
+      }
+    }
+    
+    // Unlock a level
+    function unlockLevel(levelNumber) {
+      const level = levels.find(l => l.number === levelNumber);
+      if (level && !level.unlocked) {
+        level.unlocked = true;
+        saveUnlockedLevels();
+        renderLevels();
+        
+        // Notify App Inventor
+        if (typeof window.AppInventor !== 'undefined') {
+          window.AppInventor.setWebViewString(`levelUnlocked:${levelNumber}`);
+        }
+      }
+    }
+    
+    // Render level cards
+    function renderLevels() {
+      const grid = document.getElementById('levelsGrid');
+      grid.innerHTML = '';
+      
+      levels.forEach(level => {
+        const card = document.createElement('div');
+        card.className = `level-card ${level.unlocked ? 'unlocked' : 'locked'}`;
+        
+        const statusClass = level.unlocked ? 'status-unlocked' : 'status-locked';
+        const statusText = level.unlocked ? 'Unlocked' : 'Locked';
+        const lockIcon = level.unlocked ? '' : '<span class="lock-icon">LOCKED</span>';
+        
+        card.innerHTML = `
+          <div class="level-number">
+            LEVEL ${level.number}
+            ${lockIcon}
+          </div>
+          <div class="level-title">${level.title}</div>
+          <div class="level-status ${statusClass}">
+            ${statusText}
+          </div>
+          ${level.unlocked ? '<div class="progress-indicator">Click to start</div>' : '<div class="progress-indicator">Complete previous level to unlock</div>'}
+        `;
+        
+        if (level.unlocked) {
+          card.addEventListener('click', () => {
+            startLevel(level.number);
+          });
+        } else {
+          card.addEventListener('click', () => {
+            showLockedMessage(level.number);
+          });
+        }
+        
+        grid.appendChild(card);
+      });
+    }
+    
+    // Start a level
+    function startLevel(levelNumber) {
+      const queryUrl = `final_fixed.html?level=${levelNumber}`;
+      const fallbackUrl = 'final_fixed.html';
+      levelNavigationConfirmed = false;
+      
+      try {
+        localStorage.setItem('pendingLevel', String(levelNumber));
+      } catch (e) {
+        console.warn('Unable to store pending level selection:', e);
+      }
+      
+      if (typeof window.AppInventor !== 'undefined') {
+        try {
+          window.AppInventor.setWebViewString(`startLevel:${levelNumber}`);
+          console.log(`Requested App Inventor to start level ${levelNumber}`);
+        } catch (e) {
+          console.error('Failed to notify App Inventor, falling back to asset navigation.', e);
+          window.location.href = fallbackUrl;
+        }
+        return;
+      }
+      
+      // Web testing / desktop browser
+      window.location.href = queryUrl;
+    }
+    
+    // Show locked message
+    function showLockedMessage(levelNumber) {
+      alert(`Level ${levelNumber} is locked! Complete Level ${levelNumber - 1} first to unlock this level.`);
+    }
+    
+    
+    // Process App Inventor commands
+    function processAppInventorInput() {
+      if (typeof window.AppInventor !== 'undefined') {
+        try {
+          const input = window.AppInventor.getWebViewString();
+          if (input && input.length > 0) {
+            // Check for level completion notification
+            if (input.startsWith('levelCompleted:')) {
+              const completedLevel = parseInt(input.split(':')[1]);
+              if (completedLevel >= 1 && completedLevel < 6) {
+                // Unlock next level
+                unlockLevel(completedLevel + 1);
+              }
+            }
+            // Check for unlock command
+            else if (input.startsWith('unlockLevel:')) {
+              const levelToUnlock = parseInt(input.split(':')[1]);
+              unlockLevel(levelToUnlock);
+            }
+            // Check for refresh command
+            else if (input === 'refresh') {
+              loadUnlockedLevels();
+              renderLevels();
+            }
+          }
+        } catch (e) {
+          console.error('Error processing App Inventor input:', e);
+        }
+      }
+    }
+    
+    // Initialize
+    function init() {
+      loadUnlockedLevels();
+      renderLevels();
+      
+      // Check for App Inventor input periodically
+      setInterval(processAppInventorInput, 100);
+      
+      // Listen for level completion from FINAL_FIXED.html via postMessage
+      window.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'levelCompleted') {
+          const completedLevel = event.data.level;
+          if (completedLevel >= 1 && completedLevel < 6) {
+            unlockLevel(completedLevel + 1);
+          }
+        }
+      });
+      
+      // Listen for storage changes (when FINAL_FIXED.html saves completed levels)
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'completedLevels') {
+          loadUnlockedLevels();
+          renderLevels();
+        }
+      });
+      
+      // Refresh when page becomes visible (user returns from FINAL_FIXED.html)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          loadUnlockedLevels();
+          renderLevels();
+        }
+      });
+      
+      // Also refresh on page focus (for same-tab navigation)
+      window.addEventListener('focus', () => {
+        loadUnlockedLevels();
+        renderLevels();
+      });
+    }
+    
+    // Expose functions for App Inventor
+    window.unlockLevel = unlockLevel;
+    window.startLevel = startLevel;
+    
+    // ========================================
+    // RESET PROGRESS FUNCTION
+    // ========================================
+    function resetAllProgress() {
+      // Clear localStorage (for web testing)
+      try {
+        localStorage.removeItem('completedLevels');
+        localStorage.removeItem('unlockedLevels');
+        console.log('All progress has been reset!');
+      } catch (e) {
+        console.error('Error resetting progress:', e);
+      }
+      
+      // Notify App Inventor to clear saved data
+      if (typeof window.AppInventor !== 'undefined') {
+        window.AppInventor.setWebViewString('resetProgress');
+      }
+      
+      // Reload the page to start fresh
+      window.location.reload();
+    }
+    
+    // Expose reset function globally for easy access
+    // You can call this from browser console: resetAllProgress()
+    window.resetAllProgress = resetAllProgress;
+    window.loadUnlockedLevels = loadUnlockedLevels;
+    
+    // Start on load
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

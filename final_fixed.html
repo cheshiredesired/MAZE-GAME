@@ -1,0 +1,3926 @@
+<!doctype html> 
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+  <title>Maze Quiz Game - 6 Levels</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-image:url('background.png');background-size:cover;background-position:center;background-repeat:no-repeat;background-attachment:fixed;color:#ffffff;overflow:hidden;touch-action:none;margin:0;padding:0}
+    
+    /* LESSON SCREEN STYLES */
+    #lessonScreen{display:none;width:100vw;height:100vh;position:fixed;top:0;left:0;z-index:800;background:rgba(255,255,255,0.98);overflow:hidden;visibility:hidden;opacity:0;transition:none !important;pointer-events:none}
+    #lessonScreen.active{display:flex !important;flex-direction:column;visibility:visible !important;opacity:1 !important;transition:none !important;pointer-events:auto}
+    .lesson-container{display:flex;flex-direction:column;height:100%;padding:20px;overflow-y:auto}
+    .lesson-header{text-align:center;margin-bottom:20px;padding-bottom:15px;border-bottom:2px solid #d37556}
+    .lesson-header h1{color:#333;font-size:24px;margin-bottom:10px}
+    .level-indicator{color:#d37556;font-weight:bold;font-size:16px}
+    .lesson-content{flex:1;overflow-y:auto;margin-bottom:20px}
+    .lesson-section{margin-bottom:20px}
+    .video-section{width:100%;margin:20px 0;text-align:center}
+    .video-link{display:inline-block;position:relative;width:100%;max-width:560px;border-radius:8px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.3);transition:transform 0.3s ease;cursor:pointer;text-decoration:none}
+    .video-link:hover{transform:scale(1.02);box-shadow:0 6px 20px rgba(0,0,0,0.4)}
+    .video-thumbnail{width:100%;height:auto;display:block;object-fit:cover}
+    .video-play-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80px;height:80px;background:rgba(211,117,86,0.9);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all 0.3s ease}
+    .video-link:hover .video-play-overlay{background:rgba(211,117,86,1);transform:translate(-50%,-50%) scale(1.1)}
+    .video-play-icon{width:0;height:0;border-left:25px solid white;border-top:15px solid transparent;border-bottom:15px solid transparent;margin-left:8px}
+    .video-title{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);color:white;padding:15px;font-size:14px;font-weight:bold;text-align:left}
+    /* Embedded video player styles */
+    .video-embedded{width:100%;max-width:560px;margin:20px auto;border-radius:8px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+    .video-embedded video{width:100%;height:auto;display:block;background:#000}
+    .image-section img{width:100%;max-height:300px;object-fit:contain;border-radius:8px;margin-bottom:15px}
+    .image-section img:last-child{margin-bottom:0}
+    .scrollable-text{padding:15px;background:#f5f5f5;border-radius:8px;line-height:1.6;color:#333}
+    .scrollable-text p{margin-bottom:15px}
+    .lesson-footer{padding-top:10px;border-top:2px solid #d37556;text-align:center;padding-bottom:10px}
+    /* Start Quiz Button - Part of Page */
+    #startQuizBtn{display:block;width:100%;max-width:250px;margin:8px auto;padding:10px 25px;border:none;border-radius:20px;font-size:15px;font-weight:bold;cursor:pointer;background:linear-gradient(135deg,#d37556 0%,#b85a3f 100%);color:white;box-shadow:0 4px 15px rgba(211,117,86,0.5);transition:all 0.3s ease;white-space:nowrap;touch-action:manipulation;-webkit-tap-highlight-color:transparent;text-align:center}
+    #startQuizBtn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(211,117,86,0.6);background:linear-gradient(135deg,#b85a3f 0%,#d37556 100%)}
+    #startQuizBtn:active{transform:translateY(0) scale(0.98)}
+    #startQuizBtn .arrow{display:inline-block;margin-left:6px;font-size:16px}
+    
+    #gameContainer{width:100vw;height:100vh;display:none;flex-direction:column;position:relative;z-index:900}
+    #stats{display:flex;justify-content:space-between;padding:10px 15px;font-size:15px;font-weight:bold;background:rgba(211,117,86,0.95);border-bottom:3px solid #e08a6f;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(0,0,0,0.2);animation:slideDown 0.5s ease-out}
+    @keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+    .stat{display:flex;align-items:center;gap:6px;color:#ffffff;transition:transform 0.2s ease}
+    .stat:hover{transform:scale(1.05)}
+    .stat-label{font-size:12px;opacity:0.9}
+    #zonesCompleted{color:#ffffff;font-weight:bold}
+    #progressBarContainer{width:100%;height:8px;background:rgba(0,0,0,0.2);position:relative;overflow:hidden}
+    #progressBarFill{height:100%;background:linear-gradient(90deg,#10b981 0%,#34d399 100%);width:0%;transition:width 0.5s ease;box-shadow:0 0 10px rgba(16,185,129,0.5);animation:shimmer 2s infinite}
+    @keyframes shimmer{0%,100%{opacity:1}50%{opacity:0.8}}
+    #progressText{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:10px;font-weight:bold;color:#ffffff;text-shadow:1px 1px 2px rgba(0,0,0,0.8)}
+    #questionBox{background:rgba(255,255,255,0.95);padding:14px;border-radius:10px;margin:10px 15px 5px 15px;border:2px solid #d37556;box-shadow:0 4px 15px rgba(0,0,0,0.2);animation:slideIn 0.5s ease-out}
+    @keyframes slideIn{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
+    #question{font-size:14px;margin-bottom:10px;text-align:center;font-weight:bold;line-height:1.4;color:#8b4a2f}
+    #answers{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px}
+    .answer{background:#f3f4f6;padding:8px;border-radius:6px;text-align:center;border:2px solid #d37556;color:#8b4a2f;transition:all 0.3s ease;animation:fadeIn 0.4s ease-out}
+    .answer:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(211,117,86,0.4)}
+    @keyframes fadeIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+    #message{text-align:center;padding:8px;background:rgba(211,117,86,0.95);border-radius:8px;margin:0 15px 10px;font-weight:bold;display:none;font-size:12px;border:2px solid #ffffff;color:#ffffff;animation:popIn 0.3s ease-out;box-shadow:0 2px 10px rgba(0,0,0,0.2)}
+    @keyframes popIn{from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1}}
+    #streakNotification{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#f59e0b,#ef4444);padding:20px 35px;border-radius:15px;font-size:22px;font-weight:bold;display:none;z-index:300;animation:streakPop .5s ease-out;box-shadow:0 10px 35px rgba(245,158,11,0.6);border:3px solid #fff;color:#fff}
+    @keyframes streakPop{0%{transform:translate(-50%,-50%) scale(0) rotate(-180deg)}50%{transform:translate(-50%,-50%) scale(1.2) rotate(10deg)}100%{transform:translate(-50%,-50%) scale(1) rotate(0deg)}}
+    #canvasContainer{flex:0 0 auto;display:flex;justify-content:center;align-items:flex-start;padding:5px 8px 8px 8px;overflow:hidden;position:relative;width:100%}
+    #gameArea{position:relative;display:block;overflow:hidden;border:3px solid #d37556;border-radius:10px;box-shadow:0 6px 25px rgba(0,0,0,0.3);margin:0 auto;max-width:95vw;max-height:50vh;animation:gameAreaPulse 3s ease-in-out infinite}
+    @keyframes gameAreaPulse{0%,100%{box-shadow:0 6px 25px rgba(0,0,0,0.3)}50%{box-shadow:0 8px 30px rgba(211,117,86,0.5)}}
+    #canvas{border:none;border-radius:8px;background:#1e1b4b;touch-action:none;display:block;width:100%;height:100%;image-rendering:crisp-edges}
+    
+    /* LEVEL COMPLETE MODAL */
+    #levelCompleteModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;justify-content:center;align-items:center;z-index:3000;background:rgba(0,0,0,.92);animation:fadeIn 0.3s ease-out}
+    #levelCompleteModal.active{display:flex !important;visibility:visible !important;opacity:1 !important;pointer-events:auto !important}
+    #levelCompleteContent{background:rgba(255,255,255,0.98);padding:28px;border-radius:18px;max-width:420px;width:90%;text-align:center;border:3px solid #d37556;box-shadow:0 10px 50px rgba(211,117,86,0.5);color:#8b4a2f;animation:scaleIn 0.4s ease-out}
+    @keyframes scaleIn{from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1}}
+    #levelCompleteContent h2{color:#d37556;font-size:26px;margin-bottom:15px;font-weight:bold}
+    #levelCompleteContent p{font-size:16px;margin:10px 0;color:#8b4a2f;line-height:1.6}
+    #gameCompleteModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;justify-content:center;align-items:center;z-index:500;background:rgba(0,0,0,.92)}
+    #gameCompleteModal.active{display:flex}
+    #gameCompleteContent{background:rgba(255,255,255,0.98);padding:28px;border-radius:18px;max-width:420px;width:90%;text-align:center;border:3px solid #d37556;box-shadow:0 10px 50px rgba(211,117,86,0.5);color:#8b4a2f}
+    
+    /* FAILURE MODAL - Too Many Wrong Answers */
+    #failureModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;justify-content:center;align-items:center;z-index:3000;background:rgba(0,0,0,.92);animation:fadeIn 0.3s ease-out}
+    #failureModal.active{display:flex !important;visibility:visible !important;opacity:1 !important;pointer-events:auto !important}
+    #failureContent{background:rgba(255,255,255,0.98);padding:28px;border-radius:18px;max-width:420px;width:90%;text-align:center;border:3px solid #ef4444;box-shadow:0 10px 50px rgba(239,68,68,0.5);color:#4c1d95;animation:shakeModal 0.5s ease-out}
+    @keyframes shakeModal{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-10px)}20%,40%,60%,80%{transform:translateX(10px)}}
+    #failureContent h2{color:#ef4444;font-size:26px;margin-bottom:15px}
+    #failureContent p{font-size:16px;margin:10px 0;color:#8b4a2f;line-height:1.6}
+    #failureContent .wrongCount{font-size:20px;font-weight:bold;color:#ef4444;margin:15px 0}
+    
+    /* D-PAD CONTROLS - ENLARGED WITH ANIMATIONS */
+    #controlsContainer{position:fixed;bottom:10px;left:0;right:0;display:flex;justify-content:center;align-items:center;padding:0 20px;z-index:1000;pointer-events:none;animation:fadeInUp 0.6s ease-out}
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:translateY(0)}}
+    #dpadContainer{pointer-events:auto;width:180px;height:180px;display:grid;grid-template-columns:60px 60px 60px;grid-template-rows:60px 60px 60px;gap:0;align-items:center;justify-items:center;position:fixed;bottom:40px;left:50%;transform:translateX(-50%);}
+    .dpad-btn{width:48px;height:48px;border-radius:8px;background:rgba(255,255,255,0.95);border:3px solid #d37556;color:#8b4a2f;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:20px;touch-action:manipulation;box-shadow:0 3px 10px rgba(0,0,0,0.3);transition:all 0.2s ease;cursor:pointer;animation:none !important;pointer-events:auto !important;position:relative;z-index:1001}
+    .dpad-btn:active{background:#d37556;color:#ffffff;transform:translateY(2px) scale(0.95);box-shadow:0 2px 15px rgba(211,117,86,0.6)}
+    
+    
+    /* How to Play overlay */
+    #howToPlayOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);display:none;justify-content:center;align-items:center;z-index:1001;padding:20px;overflow-y:auto;animation:none;visibility:hidden;opacity:0;transition:none !important}
+    #howToPlayOverlay.active{display:flex;visibility:visible !important;opacity:1 !important;transition:none !important}
+    #howToPlayContent{background:rgba(255,255,255,0.98);padding:28px;border-radius:18px;max-width:480px;width:94%;text-align:center;border:3px solid #d37556;box-shadow:0 10px 50px rgba(211,117,86,0.5);color:#8b4a2f;animation:scaleIn 0.4s ease-out}
+    @keyframes scaleIn{from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1}}
+    #howToPlayContent h2{font-size:26px;color:#b85a3f;margin-bottom:12px}
+    .howToList{text-align:left;margin:12px 0;padding-left:18px;font-size:14px;color:#8b4a2f;line-height:1.6}
+    #btnStartGame{margin-top:15px;padding:12px 35px;background:linear-gradient(135deg,#d37556,#b85a3f);color:#ffffff;font-size:18px;font-weight:bold;border:none;border-radius:25px;cursor:pointer;box-shadow:0 4px 15px rgba(211,117,86,0.5);transition:all 0.3s ease;animation:none !important}
+    #btnStartGame:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(211,117,86,0.7)}
+    #btnStartGame:active{transform:scale(0.98)}
+    .resume-text{color:#f59e0b;font-size:13px;margin-top:10px;font-style:italic}
+    
+    #explanationPopup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.92);display:none;justify-content:center;align-items:center;z-index:200;padding:20px;overflow-y:auto;animation:fadeIn 0.3s ease-out}
+    #explanationContent{background:rgba(255,255,255,0.98);padding:25px;border-radius:15px;max-width:420px;width:90%;text-align:center;border:3px solid #d37556;box-shadow:0 10px 50px rgba(211,117,86,0.5);animation:popInLarge 0.4s ease-out}
+    @keyframes popInLarge{from{transform:scale(0.5) rotate(-10deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
+    #explanationTitle{font-size:26px;font-weight:bold;margin-bottom:15px;animation:titleWiggle 0.5s ease-out}
+    @keyframes titleWiggle{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+    #explanationTitle.correct{color:#10b981}
+    #explanationTitle.wrong{color:#ef4444}
+    #explanationText{font-size:15px;line-height:1.6;margin-bottom:18px;color:#8b4a2f}
+    #tapPrompt{font-size:13px;color:#f59e0b;animation:blink 1.5s infinite;display:flex;align-items:center;justify-content:center;gap:8px}
+    @keyframes blink{0%,50%,100%{opacity:1}25%,75%{opacity:.4}}
+    
+    /* Game Over */
+    #gameOver{display:none;position:fixed;top:0;left:0;width:100%;height:100%;justify-content:center;align-items:center;z-index:400;background:rgba(0,0,0,.92);animation:fadeIn 0.3s ease-out}
+    #gameOverContent{background:rgba(255,255,255,0.98);padding:28px;border-radius:18px;max-width:420px;width:90%;text-align:center;border:3px solid #d37556;box-shadow:0 10px 50px rgba(211,117,86,0.5);color:#8b4a2f;animation:gameOverAppear 0.5s ease-out}
+    @keyframes gameOverAppear{from{transform:scale(0.7) translateY(-50px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+    #gameOverTitle{font-size:28px;margin-bottom:15px;color:#b85a3f;display:flex;align-items:center;justify-content:center;gap:10px;animation:titleBounce 0.6s ease-out}
+    @keyframes titleBounce{0%{transform:scale(0)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+    #gameOverContent p{font-size:18px;margin:10px 0;color:#8b4a2f;font-weight:600}
+    .gameOverButtons{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+    .gameOverButton{padding:12px 24px;background:linear-gradient(135deg,#d37556,#b85a3f);color:#ffffff;font-size:16px;font-weight:bold;border:none;border-radius:25px;cursor:pointer;box-shadow:0 4px 15px rgba(211,117,86,0.5);transition:all 0.3s ease;animation:none !important}
+    .gameOverButton:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(211,117,86,0.7)}
+    .gameOverButton:active{transform:scale(0.98)}
+    .gameOverButton.quit{background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 15px rgba(239,68,68,0.5)}
+    .gameOverButton.quit:hover{box-shadow:0 6px 20px rgba(239,68,68,0.7)}
+    #gameStats{margin:15px 0;text-align:left}
+    .statRow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(211,117,86,0.3);animation:statRowSlide 0.4s ease-out forwards;opacity:0}
+    @keyframes statRowSlide{from{transform:translateX(-30px);opacity:0}to{transform:translateX(0);opacity:1}}
+    .statRow:nth-child(1){animation-delay:0.1s}
+    .statRow:nth-child(2){animation-delay:0.2s}
+    .statRow:nth-child(3){animation-delay:0.3s}
+    .statRow:nth-child(4){animation-delay:0.4s}
+    .statRow:nth-child(5){animation-delay:0.5s}
+    .statLabel{color:#6b7280}
+    .statValue{color:#b85a3f;font-weight:bold}
+    .highScore{background:linear-gradient(135deg,#fef3c7,#fde68a);border:3px solid #f59e0b;padding:12px;border-radius:10px;margin:12px 0;font-weight:bold;color:#92400e;box-shadow:0 4px 15px rgba(245,158,11,0.3);animation:highScoreShine 2s ease-in-out infinite}
+    @keyframes highScoreShine{0%,100%{box-shadow:0 4px 15px rgba(245,158,11,0.3)}50%{box-shadow:0 6px 25px rgba(245,158,11,0.6)}}
+    
+    @media (max-width:420px){
+      #howToPlayContent{padding:20px}
+      #btnStartGame{font-size:16px;padding:10px 28px}
+      #question{font-size:13px}
+      #gameArea{max-height:45vh}
+      #dpadContainer{width:180px;height:180px;grid-template-columns:60px 50px 60px;grid-template-rows:60px 50px 60px;gap:3px;bottom:40px;left:50%;transform:translateX(-50%);}
+      .dpad-btn{width:50px;height:50px;font-size:20px}
+      #startQuizBtn{padding:14px 30px;font-size:16px;max-width:90%}
+    }
+  
+/* Answer button styling */
+.answer {
+  font-weight: 700 !important;
+  background: #ffffff !important;
+  color: #8b4a2f !important;
+  border: 2px solid #d37556 !important;
+  transition: background .25s ease, transform .15s ease;
+}
+
+.answer:hover {
+  background: #ffe8e0 !important;
+  border: 2px solid #d37556 !important;
+  box-shadow: 0 0 8px rgba(211,117,86,0.6);
+  transform: scale(1.03);
+}
+
+</style>
+</head>
+<body>
+  <!-- LESSON SCREEN -->
+  <div id="lessonScreen">
+    <div class="lesson-container">
+      <div class="lesson-header">
+        <h1 id="lessonTitle">Level 1: Subtopic Name</h1>
+        <div class="level-indicator">Level <span id="currentLevel">1</span> of 6</div>
+      </div>
+      <div class="lesson-content">
+        <div id="lessonVideo" class="lesson-section video-section" style="display:none">
+          <video id="lessonVideoPlayer" controls>
+            <source src="" type="video/mp4">
+            Your browser does not support video.
+          </video>
+        </div>
+        <div id="lessonImages" class="lesson-section image-section" style="display:none">
+          <!-- Multiple images will be inserted here dynamically -->
+        </div>
+        <div class="lesson-section text-section">
+          <div id="lessonText" class="scrollable-text">
+            <p>Lesson content will appear here. This is scrollable text content for the subtopic.</p>
+            <p>Add your lesson content here...</p>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-footer">
+        <button id="startQuizBtn">Start Quiz <span class="arrow">&gt;</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="gameContainer">
+    <div id="progressBarContainer">
+      <div id="progressBarFill"></div>
+      <div id="progressText">Zone 0/0</div>
+    </div>
+
+    <div id="stats">
+      <div class="stat">
+        <span class="stat-label">Level:</span>
+        <span id="quizLevel">1</span>/6
+      </div>
+      <div class="stat">
+        <span class="stat-label">Zones:</span>
+        <span id="zonesCompleted">0</span>/<span id="totalZones">0</span>
+      </div>
+    </div>
+
+    <div id="questionBox">
+      <div id="question">Get ready...</div>
+      <div id="answers"></div>
+    </div>
+
+    <div id="message"></div>
+
+    <div id="streakNotification">STREAK BONUS!</div>
+
+    <div id="canvasContainer">
+      <div id="gameArea">
+        <canvas id="canvas" width="300" height="240"></canvas>
+      </div>
+    </div>
+
+  </div>
+  
+  <!-- LEVEL COMPLETE MODAL -->
+  <div id="levelCompleteModal">
+    <div id="levelCompleteContent">
+      <h2>Level Complete!</h2>
+      <p>Zones Completed: <span id="finalZonesCompleted">0</span>/<span id="finalTotalZones">0</span></p>
+      <button id="nextLevelBtn" class="gameOverButton">Continue</button>
+    </div>
+  </div>
+  
+  <!-- GAME COMPLETE MODAL -->
+  <div id="gameCompleteModal">
+    <div id="gameCompleteContent">
+      <h2>Congratulations!</h2>
+      <p>You've completed all 6 levels!</p>
+      <button id="restartGameBtn" class="gameOverButton">Restart Game</button>
+    </div>
+  </div>
+  
+  <!-- FAILURE MODAL - Too Many Wrong Answers -->
+  <div id="failureModal">
+    <div id="failureContent">
+      <h2>❌ Too Many Mistakes!</h2>
+      <p>You've made <span class="wrongCount" id="failureWrongCount">3</span> wrong answers.</p>
+      <p>It looks like you need to review the lesson material again.</p>
+      <p style="margin-top:20px;font-weight:bold;color:#d37556;">Would you like to go back to the lesson?</p>
+      <div style="display:flex;gap:10px;margin-top:20px;justify-content:center;">
+        <button id="backToLessonBtn" class="gameOverButton" style="flex:1;">Back to Lesson</button>
+        <button id="retryQuizBtn" class="gameOverButton" style="flex:1;background:linear-gradient(135deg,#6b7280,#4b5563);">Retry Quiz</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="controlsContainer">
+    <div id="dpadContainer">
+      <div></div>
+      <button class="dpad-btn" id="dpad-up">▲</button>
+      <div></div>
+      <button class="dpad-btn" id="dpad-left">◀</button>
+      <div style="width:48px;height:48px"></div>
+      <button class="dpad-btn" id="dpad-right">▶</button>
+      <div></div>
+      <button class="dpad-btn" id="dpad-down">▼</button>
+      <div></div>
+    </div>
+  </div>
+
+  <div id="explanationPopup">
+    <div id="explanationContent">
+      <div id="explanationTitle">Correct!</div>
+      <div id="explanationText">Explanation text here...</div>
+      <div id="tapPrompt">Tap anywhere for next quiz</div>
+    </div>
+  </div>
+
+  <div id="gameOver">
+    <div id="gameOverContent">
+      <h2 id="gameOverTitle">Game Over</h2>
+      <div class="highScore">High Score: <span id="highScore">0</span></div>
+      <p>Your Score: <span id="finalScore">0</span></p>
+      <div id="gameStats"></div>
+      <div class="gameOverButtons">
+        <button id="btnPlayAgain" class="gameOverButton">Play Again</button>
+        <button id="btnQuitGame" class="gameOverButton quit">Quit Game</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="howToPlayOverlay">
+    <div id="howToPlayContent">
+      <h2>How to Play</h2>
+      <div class="howToList">
+        <p><b>Move</b> using the D-pad or arrow keys / WASD to navigate through the maze.</p>
+        <ul>
+          <li>Complete all <b>answer zones</b> (blue zones with "?") before reaching the exit.</li>
+          <li>Avoid <b>decoy zones</b> (look like answer zones but teleport you back!)</li>
+          <li>Answer questions correctly at each zone to complete them.</li>
+          <li>You must complete all zones before you can exit the maze.</li>
+          <li>There are <b>6 levels</b> - each starts with a lesson, then a quiz maze.</li>
+          <li>Each level has 3-4 answer zones that must be completed.</li>
+        </ul>
+      </div>
+      <button id="btnStartGame">Start Game</button>
+      <div class="resume-text" id="resumeText" style="display:none;">Game is paused</div>
+    </div>
+  </div>
+
+<script>
+  const CELL_SIZE = 20; // MOBILE OPT: Reduced from 30
+  const MAZE_WIDTH = 15;
+  const MAZE_HEIGHT = 12;
+  const TOTAL_LEVELS = 6;
+
+  let gameState = 'lesson'; // 'lesson' or 'quiz'
+  let currentLevel = 1;
+  let player = { x: 0, y: 0 };
+  let currentMaze = [];
+  let entryPoint = null;
+  let exitPoint = null;
+  let answerZones = [];
+  let decoyZones = [];
+  let completedZones = new Set();
+  let attemptedZones = new Set(); // Track all zones that have been attempted (correct or wrong)
+  let lastAnsweredZone = null; // Track last answered zone position for decoy teleportation
+  let totalZonesNeeded = 0; // Track total zones needed for this level
+  let correctAnswers = 0; // Track correct answers for this level
+  let wrongAnswers = 0; // Track wrong answers for this level
+  let targetCell = null;
+  let movementInterval = null;
+  let isShowingExplanation = false;
+  let isDragging = false;
+  let dragStartX = 0, dragStartY = 0;
+  let lastMoveTime = 0;
+  const MOVE_DELAY = 100;
+  const MAX_WRONG_ANSWERS = 3; // Maximum wrong answers before failure
+  let cameraOffsetX = 0, cameraOffsetY = 0;
+  let boosting = false; // Removed - speed boost feature disabled
+  let boostCooldown = false; // Removed - speed boost feature disabled
+  let hasMovedYet = false;
+  let currentQuestionIndex = 0;
+  
+  // Level data structure
+  // IMPORTANT: Extract content from PDF and fill in the following structure
+  // For images: Use naming convention LVL1-1.png, LVL1-2.png, LVL2-1.png, etc.
+  //   - LVL1 = Level 1, LVL2 = Level 2, etc.
+  //   - -1, -2, etc. = image number for that level
+  // For questions: Add questions specific to each level in the questions array
+  const levels = [
+    {
+      level: 1,
+      subtopic: "The Structure of the Earth",
+      lessonContent: {
+        video: {url: "https://www.youtube.com/watch?v=eXiVGEEPQ6c", title: "Structure Of The Earth | The Dr. Binocs Show | Educational Videos For Kids", thumbnail: "https://img.youtube.com/vi/eXiVGEEPQ6c/maxresdefault.jpg"},
+        images: ["LVL1-1.jpg", "LVL1-2.png", "LVL1-3.png", "LVL1-4.jpg", "LVL1-5.png", "LVL1-7.jpg", "LVL1-6.jpg"],
+        text: [
+          "<strong>Mission Goal:</strong>",
+          "Explore the different layers of the Earth to understand how each of those layers contributes to the planet's overall structure and function.",
+          "",
+          "<strong>Objectives:</strong>",
+          "By the end of this level you will be able to:",
+          "• Identify the different layers of the Earth",
+          "• Explain how these layers work together to form our planet",
+          "• Appreciate how learning about the Earth's structure helps us to understand our world better",
+          "",
+          "<strong>Checkpoint 1: What's Beneath the Surface?</strong>",
+          "The Earth is divided into a series of layers: the <strong>inner core</strong>, <strong>outer core</strong>, <strong>mantle</strong>, <strong>crust</strong>, <strong>asthenosphere</strong>, and <strong>lithosphere</strong>. Each of these layers has its own chemical and mechanical properties.",
+          "",
+          "[IMAGE: LVL1-1.jpg]",
+          "",
+          "<strong>Checkpoint 2: The Layers of the Earth</strong>",
+          "",
+          "<strong>1. Crust</strong>",
+          "The outermost layer of the Earth is the <strong>crust</strong>. The <strong>crust</strong> is the thinnest layer and It is made of solid rock. There are two types of <strong>crust</strong>:",
+          "<strong>a. Continental Crust</strong>",
+          "<strong>Continental crust</strong> is thicker, less dense, older, and composed of granite, forming the continents.",
+          "<strong>b. Oceanic Crust</strong>",
+          "<strong>Oceanic crust</strong> is thinner, denser, younger, and made of basalt, forming the ocean floor.",
+          "",
+          "[IMAGE: LVL1-2.png]",
+          "",
+          "<strong>2. Lithosphere</strong>",
+          "The rigid outer part of the Earth that consists of the <strong>crust</strong> and upper <strong>mantle</strong>.",
+          "",
+          "[IMAGE: LVL1-3.png]",
+          "",
+          "<strong>3. Asthenosphere</strong>",
+          "The soft, semi-molten layer of the upper <strong>mantle</strong> located beneath the <strong>lithosphere</strong>. It is made of partially melted rock that can flow slowly, allowing the tectonic plates above it to move.",
+          "",
+          "[IMAGE: LVL1-4.jpg]",
+          "",
+          "<strong>4. Mantle</strong>",
+          "Located beneath the <strong>crust</strong>, the <strong>mantle</strong> is the thickest layer, extending for about 1,800 miles. It is composed of hot, viscous rock that is mostly solid but can flow over long periods. This layer is responsible for generating the Earth's magnetic field.",
+          "",
+          "[IMAGE: LVL1-5.png]",
+          "",
+          "<strong>5. Outer Core</strong>",
+          "This is a liquid layer of mostly iron and nickel, about 1,400 miles thick. The churning of this liquid metal is what generates Earth's magnetic field.",
+          "",
+          "[IMAGE: LVL1-7.jpg]",
+          "",
+          "<strong>6. Inner Core</strong>",
+          "At the very center of the Earth is the <strong>inner core</strong>, which is a solid sphere of iron and nickel. Despite being an extremely hot, solid ball, the immense pressure keeps it from melting.",
+          "",
+          "[IMAGE: LVL1-6.jpg]",
+          "",
+          "<strong>Fun Facts:</strong>",
+          "• The <strong>crust</strong> and the upper <strong>mantle</strong> form the <strong>lithosphere</strong>, which is solid and brittle, and is approximately 100 km thick.",
+          "• The <strong>lithosphere</strong> is divided into large sections, known as tectonic plates. Tectonic plates consist of sections of the <strong>lithosphere</strong>. The oceanic <strong>lithosphere</strong> is topped by oceanic <strong>crust</strong>, and the continental <strong>lithosphere</strong> is topped by continental <strong>crust</strong>.",
+          "• A common misconception is that the <strong>mantle</strong> is made of liquid magma. In fact, it is made of solid rock.",
+          "• The <strong>outer core</strong> is made up of liquid iron and nickel. The <strong>inner core</strong>, a solid mass of iron and nickel, forms the Earth's centre.",
+          "",
+          "<strong>Check Out this Video and Learn More!</strong>",
+          "Structure Of The Earth | The Dr. Binocs Show | Educational Videos For Kids",
+          "[VIDEO]",
+          ""
+        ]
+      },
+      questions: [
+        {
+          question: "Which layer of the Earth is responsible for generating the planet's magnetic field?",
+          answers: ["Mantle", "Inner Core", "Outer Core"],
+          correct: 0,
+          explanation: "The mantle is responsible for generating the Earth's magnetic field according to the lesson content."
+        },
+        {
+          question: "What are the two main types of Earth's crust?",
+          answers: ["Continental and Oceanic", "Mantle and Lithosphere", "Inner and Outer Core"],
+          correct: 2,
+          explanation: "The answer is Inner and Outer Core."
+        },
+        {
+          question: "Which statement about the mantle is true?",
+          answers: ["It is completely liquid and made of magma.", "It is the thinnest layer of the Earth.", "It is made of hot, solid rock that can slowly flow."],
+          correct: 0,
+          explanation: "The mantle is completely liquid and made of magma."
+        },
+        {
+          question: "What two layers make up the lithosphere?",
+          answers: ["Crust and upper mantle", "Mantle and outer core", "Inner and outer core"],
+          correct: 0,
+          explanation: "The lithosphere consists of the crust and the upper mantle."
+        },
+        {
+          question: "Why does the inner core stay solid even though it is very hot?",
+          answers: ["Because the pressure at the Earth's center is extremely high", "Because it is made of rock", "Because the outer core cools it"],
+          correct: 0,
+          explanation: "The inner core stays solid because the immense pressure at the Earth's center keeps it from melting, despite the extreme heat."
+        }
+      ],
+      answerZones: 5
+    },
+    {
+      level: 2,
+      subtopic: "Plate Boundaries",
+      lessonContent: {
+        video: {url: "https://www.youtube.com/watch?v=3ZpDjdFzQUM", title: "Plate Boundaries-Divergent-Convergent-Transform", thumbnail: "https://img.youtube.com/vi/3ZpDjdFzQUM/maxresdefault.jpg"},
+        images: ["lvl2-1.jpg", "lvl2-2.gif", "lvl2-3.jpg", "lvl2-4.gif", "lvl2-5.jpg", "lvl2-6.gif", "lvl2-7.jpg"],
+        text: [
+          "<strong>Mission Goal:</strong>",
+          "Learn how Earth's tectonic plates move and what occurs where the plates meet.",
+          "",
+          "<strong>Objectives:</strong>",
+          "By the end of this level, you should be able to:",
+          "• Identify the three main types of plate boundaries.",
+          "• Describe how each boundary moves.",
+          "• Match each boundary to the landforms or events it creates.",
+          "",
+          "<strong>Checkpoint 1: What Are Plate Boundaries?</strong>",
+          "The Earth's crust is divided into large pieces called tectonic plates.",
+          "Where these plates meet are called plate boundaries — areas full of movement, earthquakes, and volcanoes.",
+          "",
+          "[IMAGE: lvl2-1.jpg]",
+          "",
+          "<strong>Fun Fact:</strong>",
+          "The Philippines sits at the edges of several tectonic plates, which is why our country often experiences earthquakes and volcanic eruptions.",
+          "",
+          "<strong>Checkpoint 2: The Three Types of Boundaries</strong>",
+          "",
+          "<strong>1. Divergent Boundary</strong>",
+          "",
+          "[IMAGE: lvl2-2.gif]",
+          "",
+          "Plates move away from each other, allowing magma to rise and form a new crust.",
+          "This can be seen in mid-ocean ridges or rift valleys.",
+          "",
+          "<strong>Example: Mid-Atlantic Ridge</strong>",
+          "",
+          "[IMAGE: lvl2-3.jpg]",
+          "",
+          "<strong>2. Convergent Boundary</strong>",
+          "",
+          "[IMAGE: lvl2-4.gif]",
+          "",
+          "Plates collide or move toward each other, and one plate may sink beneath another (subduction).",
+          "This causes volcanic arcs, deep ocean trenches, and strong earthquakes.",
+          "",
+          "<strong>Example: Himalayas Mountain</strong>",
+          "",
+          "[IMAGE: lvl2-5.jpg]",
+          "",
+          "<strong>3. Transform Boundary</strong>",
+          "",
+          "[IMAGE: lvl2-6.gif]",
+          "",
+          "Plates slide past each other horizontally.",
+          "No new crust is made or destroyed, but this movement causes many shallow earthquakes.",
+          "",
+          "<strong>Example: San Andreas Fault, USA</strong>",
+          "",
+          "[IMAGE: lvl2-7.jpg]",
+          "",
+          "<strong>Check Out this Video and Learn More!</strong>",
+          "Plate Boundaries-Divergent-Convergent-Transform",
+          "[VIDEO]",
+          ""
+        ]
+      },
+      questions: [
+        {
+          question: "Plates move apart - ____________",
+          answers: ["Convergent", "Transform", "Divergent"],
+          correct: 2,
+          explanation: "Divergent boundaries occur when plates move away from each other, allowing magma to rise and form new crust."
+        },
+        {
+          question: "Deep trenches form here - ____________",
+          answers: ["Divergent", "Convergent", "Transform"],
+          correct: 1,
+          explanation: "Convergent boundaries form deep ocean trenches when one plate sinks beneath another in a process called subduction."
+        },
+        {
+          question: "Plates slide past each other - ____________",
+          answers: ["Convergent", "Transform", "Divergent"],
+          correct: 1,
+          explanation: "Transform boundaries occur when plates slide past each other horizontally, causing shallow earthquakes."
+        },
+        {
+          question: "New crust is formed - ____________",
+          answers: ["Convergent", "Divergent", "Transform"],
+          correct: 1,
+          explanation: "Divergent boundaries create new crust as plates move apart and magma rises to fill the gap."
+        },
+        {
+          question: "The Philippines is mostly affected by - ____________",
+          answers: ["Convergent", "Divergent", "Transform"],
+          correct: 0,
+          explanation: "The Philippines sits at the edges of several tectonic plates, primarily experiencing convergent boundaries which cause earthquakes and volcanic eruptions."
+        }
+      ],
+      answerZones: 5
+    },
+    {
+      level: 3,
+      subtopic: "Seafloor Spreading",
+      lessonContent: {
+        video: [
+          {url: "https://www.youtube.com/watch?v=y02s9EioHfQ", title: "Seafloor Spreading Video 1", thumbnail: "https://img.youtube.com/vi/y02s9EioHfQ/maxresdefault.jpg"},
+          {url: "https://www.youtube.com/watch?v=7K6MaJPA0aM", title: "Seafloor Spreading Video 2", thumbnail: "https://img.youtube.com/vi/7K6MaJPA0aM/maxresdefault.jpg"}
+        ],
+        images: ["lvl3-1.png"],
+        text: [
+          "<strong>Mission Goal:</strong>",
+          "Discover how the new ocean floor is formed through the process of seafloor spreading.",
+          "",
+          "<strong>Objectives:</strong>",
+          "By the end of this level, you should be able to:",
+          "• Explain what seafloor spreading is and how it happens.",
+          "• Describe the role of mid-ocean ridges in forming new crust.",
+          "• Identify the evidence that supports seafloor spreading.",
+          "• Understand how this process helps shape Earth's surface over time.",
+          "",
+          "<strong>Checkpoint 1: What is Seafloor Spreading?</strong>",
+          "Seafloor spreading is the process where new oceanic crust is formed at mid-ocean ridges and moves outward as magma rises from the mantle, cools, and solidifies. This process constantly creates new seafloor, pushing older crust away from the ridge and slowly moving the continents in the process.",
+          "",
+          "This discovery provided strong evidence for the Theory of Plate Tectonics, helping scientists explain how continents drift and how the ocean floor is renewed over time.",
+          "",
+          "[IMAGE: lvl3-1.png]",
+          "",
+          "<strong>Checkpoint 2: How New Crust is Formed</strong>",
+          "",
+          "• <strong>Mid-Ocean Ridge</strong> – A long, underwater mountain range where magma rises through cracks in the ocean floor.",
+          "  <em>Example:</em> Mid-Atlantic Ridge — one of the best-known mid-ocean ridges on Earth.",
+          "",
+          "• <strong>Magma and New Crust Formation</strong> – When magma reaches the surface at these ridges, it cools and solidifies to form new oceanic crust. Over time, this new crust pushes older crust away from the ridge, expanding the ocean floor.",
+          "",
+          "• <strong>Seafloor Movement</strong> – As new crust continues to form, it slowly pushes older crust outward, causing the seafloor to spread on both sides of the ridge. Older oceanic crust sinks into trenches and gets recycled.",
+          "",
+          "<strong>Checkpoint 3: Evidence of Seafloor Spreading</strong>",
+          "",
+          "Scientists found several clues that support this theory:",
+          "",
+          "• <strong>Magnetic Striping</strong> – Patterns of magnetic minerals on the ocean floor show symmetrical stripes on both sides of mid-ocean ridges, recording Earth's magnetic field reversals.",
+          "",
+          "• <strong>Age of Rocks</strong> – Rocks near the ridge are younger, while those farther away are older — showing new crust forms at the ridge and spreads outward.",
+          "",
+          "• <strong>Sediment Thickness</strong> – Sediments are thinner near the ridge and thicker farther away, indicating continuous formation and outward movement.",
+          "",
+          "• <strong>Subduction Zones</strong> – In some places, old oceanic crust sinks back into the mantle, balancing the creation of new crust at ridges.",
+          "",
+          "<strong>Fun Fact:</strong>",
+          "The sea floor spreading happens very slowly, about the same speed as your fingernails grow.",
+          "",
+          "<strong>Check Out these Videos and Learn More!</strong>",
+          "",
+          "<strong>Sea Floor Spreading with Arrows</strong>",
+          "A clean visual animation showing how new crust forms and moves outward with annotated arrows.",
+          "[VIDEO]",
+          "",
+          "<strong>Sea floor spreading by Hess - UPSC, IAS</strong>",
+          "See how hot magma rises, cools, and creates new crust that pushes older layers away — a process that supports the Theory of Plate Tectonics.",
+          "[VIDEO]",
+          ""
+        ]
+      },
+      questions: [
+        {
+          question: "What happens when magma rises through cracks in the ocean floor?",
+          answers: ["It forms new oceanic crust after cooling", "It creates earthquakes under the sea", "It destroys the old crust completely"],
+          correct: 0,
+          explanation: "When magma rises through cracks in the ocean floor at mid-ocean ridges, it cools and solidifies to form new oceanic crust."
+        },
+        {
+          question: "What is the process called where new crust forms and spreads outward from the ridge?",
+          answers: ["Continental drift", "Plate movement", "Seafloor spreading"],
+          correct: 2,
+          explanation: "Seafloor spreading is the process where new oceanic crust is formed at mid-ocean ridges and moves outward, pushing older crust away."
+        },
+        {
+          question: "What happens to old oceanic crust in subduction zones?",
+          answers: ["It stays in place near the ridge", "It sinks back into the mantle and melts", "It turns into magma near volcanoes"],
+          correct: 1,
+          explanation: "In subduction zones, old oceanic crust sinks back into the mantle and gets recycled, balancing the creation of new crust at ridges."
+        },
+        {
+          question: "What causes the sea floor to move and spread apart?",
+          answers: ["Ocean currents", "New crust pushing outward", "Wind pressure"],
+          correct: 1,
+          explanation: "As new crust forms at mid-ocean ridges, it pushes older crust outward, causing the seafloor to spread on both sides of the ridge."
+        },
+        {
+          question: "Which feature shows where old crust is destroyed?",
+          answers: ["Ocean ridge", "Rift valley", "Subduction zone"],
+          correct: 2,
+          explanation: "Subduction zones are where old oceanic crust sinks back into the mantle and gets recycled, showing where old crust is destroyed."
+        }
+      ],
+      answerZones: 5
+    },
+    {
+      level: 4,
+      subtopic: "Earthquakes",
+      lessonContent: {
+        video: {url: "https://www.youtube.com/watch?v=dJpIU1rSOFY", title: "What Is An Earthquake? | The Dr. Binocs Show | Educational Videos For Kids", thumbnail: "https://img.youtube.com/vi/dJpIU1rSOFY/maxresdefault.jpg"},
+        images: ["lvl4-1.gif", "lvl4-2.jpg", "lvl4-3.gif"],
+        text: [
+          "<strong>Mission Goal:</strong>",
+          "Discover how and why the ground shakes. Learn what happens deep inside the Earth when rocks suddenly move and release powerful energy.",
+          "",
+          "<strong>Objectives:</strong>",
+          "By the end of this level, you should be able to:",
+          "• Explain what causes earthquakes.",
+          "• Identify the main parts of an earthquake.",
+          "• Describe how energy travels through the Earth during a quake.",
+          "• Recognize the effects of earthquakes on people and the environment.",
+          "",
+          "<strong>Checkpoint 1: What is an Earthquake?</strong>",
+          "An earthquake is the shaking of the ground caused by a sudden release of energy within the Earth's crust.",
+          "This energy builds up when rocks along a fault get stuck and then suddenly break free, sending shock waves through the ground.",
+          "",
+          "[IMAGE: lvl4-1.gif]",
+          "",
+          "<strong>Checkpoint 2: Parts of an Earthquake</strong>",
+          "",
+          "[IMAGE: lvl4-2.jpg]",
+          "",
+          "• <strong>1. Focus (or Hypocenter)</strong> – The point inside the Earth where the earthquake starts. It's the origin of the shaking.",
+          "",
+          "• <strong>2. Epicenter</strong> – The point on the Earth's surface directly above the focus. This is usually where the strongest shaking happens.",
+          "",
+          "• <strong>3. Fault Line</strong> – A crack in the Earth's crust where rocks move past each other.",
+          "",
+          "<strong>Checkpoint 3: What Causes Earthquakes?</strong>",
+          "",
+          "Earthquakes occur because tectonic plates are constantly moving.",
+          "",
+          "These movements are caused by convection currents in the Earth's mantle — where hot rock rises, cools, and sinks again, pushing the plates above.",
+          "",
+          "When plates:",
+          "",
+          "• <strong>Collide</strong> – stress builds up until rocks break, creating strong quakes.",
+          "",
+          "• <strong>Slide past each other</strong> – friction causes sudden slips, like along the San Andreas Fault.",
+          "",
+          "• <strong>Pull apart</strong> – new crust forms and smaller quakes can occur.",
+          "",
+          "<strong>Fun Fact:</strong>",
+          "The Philippines lies within the Pacific Ring of Fire, one of the most earthquake-prone regions on Earth!",
+          "",
+          "<strong>Checkpoint 4: Seismic Waves and Their Effects</strong>",
+          "",
+          "When rocks break, they send out seismic waves—vibrations that travel through the Earth.",
+          "",
+          "There are three main kinds of waves:",
+          "",
+          "[IMAGE: lvl4-3.gif]",
+          "",
+          "• <strong>P-waves (Primary waves)</strong> – Move the fastest and are felt first. They push and pull the ground forward and backward.",
+          "",
+          "• <strong>S-waves (Secondary waves)</strong> – Arrive after P-waves and move the ground side to side. They cause more damage.",
+          "",
+          "• <strong>Surface waves</strong> – Travel along the Earth's surface and cause the most visible shaking and destruction.",
+          "",
+          "These waves can make buildings sway, crack roads, trigger landslides, and even generate tsunamis if the quake happens under the ocean.",
+          "",
+          "Keep in mind: Seismic waves suddenly changing speed and direction indicate that the Earth's layers differ in density and state of matter.",
+          "",
+          "<strong>Fun Fact:</strong>",
+          "The strongest recorded earthquake in the Philippines was the 1990 Luzon Earthquake, with a magnitude of 7.8!",
+          "",
+          "<strong>Check Out this Video and Learn More!</strong>",
+          "What Is An Earthquake? | The Dr. Binocs Show | Educational Videos For Kids",
+          "[VIDEO]",
+          ""
+        ]
+      },
+      questions: [
+        {
+          question: "The point inside the Earth where an earthquake begins is called - ____________",
+          answers: ["Epicenter", "Fault line", "Focus (or Hypocenter)"],
+          correct: 2,
+          explanation: "The focus (or hypocenter) is the point inside the Earth where the earthquake starts. The epicenter is the point on the surface above the focus."
+        },
+        {
+          question: "The point on the Earth's surface directly above the focus is called - ____________",
+          answers: ["Crust", "Fault", "Epicenter"],
+          correct: 2,
+          explanation: "The epicenter is the point on the Earth's surface directly above the focus, where the strongest shaking usually happens."
+        },
+        {
+          question: "The vibrations that travel through the Earth during an earthquake are called - ____________",
+          answers: ["Sound waves", "Seismic waves", "Shock lines"],
+          correct: 1,
+          explanation: "Seismic waves are the vibrations that travel through the Earth when rocks break during an earthquake."
+        },
+        {
+          question: "What causes tectonic plates to move and create earthquakes?",
+          answers: ["Winds and ocean currents", "Convection currents in the mantle", "Earth's rotation"],
+          correct: 1,
+          explanation: "Convection currents in the mantle cause hot rock to rise, cool, and sink, pushing the tectonic plates above and creating earthquakes."
+        },
+        {
+          question: "When two plates slide past each other, the sudden release of stress causes - ____________",
+          answers: ["Mountain formation", "Earthquakes", "Volcanic eruptions"],
+          correct: 1,
+          explanation: "When plates slide past each other, friction causes sudden slips that release stress, creating earthquakes like those along the San Andreas Fault."
+        }
+      ],
+      answerZones: 5
+    },
+    {
+      level: 5,
+      subtopic: "Volcanic Eruption",
+      lessonContent: {
+        video: {url: "https://www.youtube.com/watch?v=R_pDKyg5YKY", title: "What Are Volcanoes and How Are They Formed?", thumbnail: "https://img.youtube.com/vi/R_pDKyg5YKY/maxresdefault.jpg"},
+        images: ["lvl5-1.gif", "lvl5-2.jpg", "lvl5-3.jpg"],
+        text: [
+          "<strong>Mission Goal:</strong>",
+          "To explore how volcanoes form, shape the Earth's surface over time, and understand their impacts on people and the environment.",
+          "",
+          "<strong>Objectives:</strong>",
+          "By the end of this level, you should be able to:",
+          "• Know more about volcanic formation.",
+          "• Explain how volcanoes result in landforms.",
+          "• Differentiate the four main types of volcanoes.",
+          "",
+          "<strong>Checkpoint 1: What is Volcanic Formation?</strong>",
+          "Volcanoes form when magma rises to the Earth's surface, a process driven primarily by the movement of tectonic plates.",
+          "Magma collects in a magma chamber, and when pressure builds, it erupts through cracks in the crust.",
+          "Over time, repeated eruptions of lava and ash build up layers, forming the cone or mountain structure of the volcano.",
+          "",
+          "[IMAGE: lvl5-1.gif]",
+          "",
+          "<strong>Checkpoint 2: How Do Volcanoes Result in Landforms?</strong>",
+          "",
+          "Landforms formed from the volcanic activity will depend on the kind of volcano it is or the material produced.",
+          "",
+          "• <strong>Craters and Calderas</strong>",
+          "  - These are circular depressions that collect rainwater or snowmelt and are created by very explosive and gaseous eruptions.",
+          "  - They are formed by a collapse of a volcanic structure.",
+          "  - Craters are smaller in size (less than 1km in diameter), and Calderas are larger (between 1km–50km).",
+          "",
+          "• <strong>Plateau</strong>",
+          "  - This is an elevated portion of the land with a flat surface.",
+          "  - It often has steep slopes or cliffs at one or more sides.",
+          "  - It is nicknamed tableland because it looks like a table.",
+          "  - They are very common and believed to cover a third of the total land area of planet earth.",
+          "",
+          "[IMAGE: lvl5-2.jpg]",
+          "",
+          "<strong>Checkpoint 3: Types of Volcanoes</strong>",
+          "",
+          "<strong>1. Shield Volcano</strong>",
+          "  - Broad, gently sloped mountains with a \"shield\" shape, formed by effusive eruptions of low-viscosity (fluid) lava that flows great distances.",
+          "  - Examples include the Hawaiian Islands.",
+          "",
+          "<strong>2. Composite Volcano</strong>",
+          "  - Steep, conical mountains built from alternating layers of hardened lava flows, volcanic ash, and cinders.",
+          "  - They are often the most explosive type due to viscous lava.",
+          "  - Also known as stratovolcanoes, they can rise very high, like Mount Fuji and Mt. Mayon.",
+          "",
+          "<strong>3. Cinder Cone</strong>",
+          "  - Smaller, cone-shaped volcanoes made from a single vent that erupts with gas-charged lava.",
+          "  - The explosions blast lava into the air, which breaks into small fragments that cool and harden into cinders and fall around the vent.",
+          "  - They are often the smallest type of volcano and may erupt only once.",
+          "",
+          "<strong>4. Lava Dome</strong>",
+          "  - Rounded, steep-sided mounds formed by very viscous lava that is too thick to flow far from the vent.",
+          "  - The lava piles up around the vent, creating a dome shape.",
+          "",
+          "[IMAGE: lvl5-3.jpg]",
+          "",
+          "<strong>Fun Facts</strong>",
+          "",
+          "• The hot, melted rock found beneath the Earth's surface is called magma.",
+          "",
+          "• The Pacific Ocean is surrounded by many volcanoes in a region called the Ring of Fire.",
+          "",
+          "• Lava is actually magma that has reached the Earth's surface, it flows out during eruptions and can create new land as it cools.",
+          "",
+          "<strong>Check Out this Video and Learn More!</strong>",
+          "What Are Volcanoes and How Are They Formed?",
+          "[VIDEO]",
+          ""
+        ]
+      },
+      questions: [
+        {
+          question: "Which type of volcano is steep, tall, and often produces explosive eruptions?",
+          answers: ["Shield Volcano", "Cinder Cone", "Dome Volcano"],
+          correct: 1,
+          explanation: "Cinder Cone volcanoes are steep, cone-shaped volcanoes that erupt with gas-charged lava, producing explosive eruptions."
+        },
+        {
+          question: "The area around the Pacific Ocean where many volcanoes are found is called the _____.",
+          answers: ["Circle of Magma", "Fire Belt", "Ring of Fire"],
+          correct: 2,
+          explanation: "The Ring of Fire is the region around the Pacific Ocean where many volcanoes are found, caused by tectonic plate boundaries."
+        },
+        {
+          question: "What do you call the opening at the top of a volcano where lava and gases escape?",
+          answers: ["Crater", "Mantle", "Fault"],
+          correct: 0,
+          explanation: "A crater is the circular depression at the top of a volcano where lava and gases escape during eruptions."
+        },
+        {
+          question: "What type of volcano has a broad base and gentle slopes, often producing quiet eruptions?",
+          answers: ["Cinder Cone", "Composite Volcano", "Shield Volcano"],
+          correct: 2,
+          explanation: "Shield volcanoes have broad, gently sloped mountains with a shield shape, formed by effusive eruptions of low-viscosity lava."
+        },
+        {
+          question: "What happens when pressure builds up inside a volcano?",
+          answers: ["The volcano cools down", "An eruption occurs", "The lava hardens inside"],
+          correct: 1,
+          explanation: "When pressure builds up inside a volcano's magma chamber, it eventually erupts through cracks in the crust, releasing lava and gases."
+        }
+      ],
+      answerZones: 5
+    },
+    {
+      level: 6,
+      subtopic: "Tectonic Plate Movements and Their Effects",
+      lessonContent: {
+        video: [
+          {url: "https://www.youtube.com/watch?v=3yD7jmHcdVc", title: "Plate Tectonics Explained | Plate Boundaries | Convection Currents", thumbnail: "https://img.youtube.com/vi/3yD7jmHcdVc/maxresdefault.jpg"},
+          {url: "https://www.youtube.com/watch?v=q-ng6YpxHxU", title: "Animated Maps: Tectonic Plate Movement", thumbnail: "https://img.youtube.com/vi/q-ng6YpxHxU/maxresdefault.jpg"}
+        ],
+        images: ["lvl6-1.gif"],
+        text: [
+          "<strong>Mission Goal:</strong>",
+          "Understand how tectonic plate movements shape Earth's surface and cause natural events around the world.",
+          "",
+          "<strong>Objectives:</strong>",
+          "By the end of this level, you should be able to:",
+          "• Explain how tectonic plates move and interact with each other.",
+          "• Identify the effects of plate movements such as earthquakes, volcanoes, and mountain formation.",
+          "• Describe how different plate boundaries lead to various landforms and geological events.",
+          "• Recognize the importance of tectonic activity in changing Earth's surface over time.",
+          "",
+          "<strong>Checkpoint 1: What are Tectonic Movements?</strong>",
+          "The Earth's outer layer, called the lithosphere, is broken into large pieces known as tectonic plates.",
+          "These plates slowly move on top of the soft, flowing asthenosphere below.",
+          "",
+          "Millions of years ago, all continents were joined together as Pangaea, but as plates moved apart, they formed the continents we see today.",
+          "When plates collide, slide, or separate, they create powerful natural events like earthquakes and volcanic eruptions.",
+          "",
+          "[IMAGE: lvl6-1.gif]",
+          "",
+          "<strong>Checkpoint 2: Effects of Tectonic Plate Movements</strong>",
+          "",
+          "• <strong>Earthquakes:</strong> Sudden release of energy caused by plate movement. Most earthquakes occur near plate boundaries.",
+          "",
+          "• <strong>Volcanoes:</strong> Formed when magma escapes through cracks caused by moving plates.",
+          "",
+          "• <strong>Mountain Formation:</strong> Colliding plates push the crust upward, forming ranges like the Himalayas.",
+          "",
+          "• <strong>Ocean Trenches:</strong> Created when one plate is forced beneath another during subduction.",
+          "",
+          "• <strong>Islands and Ridges:</strong> Underwater volcanic activity can create islands (like the Philippines) or ridges on the seafloor.",
+          "",
+          "• <strong>Tsunamis:</strong> Underwater earthquakes caused by plate shifts can create large ocean waves.",
+          "",
+          "• <strong>Continental Drift:</strong> Over millions of years, plates' movement causes continents to drift and change positions.",
+          "",
+          "<strong>Fun Fact</strong>",
+          "Mount Everest keeps getting taller because the Indian Plate is pushing into the Eurasian Plate, the Himalayas rise a little bit higher every year.",
+          "",
+          "<strong>Check Out these Videos and Learn More!</strong>",
+          "",
+          "<strong>Plate Tectonics Explained | Plate Boundaries | Convection Currents</strong>",
+          "See how convection currents deep in the mantle drive the movement of tectonic plates, creating divergent, convergent, and transform boundaries that shape Earth's surface.",
+          "[VIDEO]",
+          "",
+          "<strong>Animated Maps: Tectonic Plate Movement</strong>",
+          "Watch how Earth's continents slowly move, collide, and separate, forming mountains, oceans, and valleys over time.",
+          "[VIDEO]",
+          ""
+        ]
+      },
+      questions: [
+        {
+          question: "What supercontinent existed millions of years ago?",
+          answers: ["Gondwana", "Eurasia", "Pangaea"],
+          correct: 2,
+          explanation: "Pangaea was the supercontinent that existed millions of years ago. All continents were joined together before plates moved apart."
+        },
+        {
+          question: "How fast do tectonic plates move?",
+          answers: ["About the speed of a cheetah", "About the speed of a snail", "About the speed of toenail growth"],
+          correct: 2,
+          explanation: "Tectonic plates move very slowly, about the same speed as toenail growth, which is why continental drift happens over millions of years."
+        },
+        {
+          question: "What natural event often occurs when tectonic plates suddenly shift along a fault line?",
+          answers: ["Volcano formation", "Earthquake", "Mountain building"],
+          correct: 1,
+          explanation: "Earthquakes occur when tectonic plates suddenly shift along a fault line, releasing energy that causes the ground to shake."
+        },
+        {
+          question: "What is the result when two continental plates push against each other over a long period?",
+          answers: ["Volcano eruption", "Ocean trench", "Mountain range formation"],
+          correct: 2,
+          explanation: "When two continental plates push against each other over a long period, they create mountain ranges like the Himalayas."
+        },
+        {
+          question: "What can form when one tectonic plate is forced beneath another in a subduction zone?",
+          answers: ["Deep ocean trench", "Rift valley", "Plateau"],
+          correct: 0,
+          explanation: "Deep ocean trenches form when one tectonic plate is forced beneath another during subduction, creating deep depressions in the ocean floor."
+        }
+      ],
+      answerZones: 5
+    }
+  ];
+
+  const allQuestions = [
+    { question: "What theory explains the movement of Earth's plates?", answers: ["Big Bang Theory", "Plate Tectonic Theory", "Continental Theory", "Ocean Floor Theory"], correct: 1, explanation: "The Plate Tectonic Theory explains how Earth's crust is divided into plates that move. The Big Bang Theory explains the universe's origin, not plate movement." },
+    { question: "Which part of Earth is made up of tectonic plates?", answers: ["Core", "Mantle", "Lithosphere", "Asthenosphere"], correct: 2, explanation: "The lithosphere is the rigid outer layer that includes the crust and upper mantle. The asthenosphere lies below it and allows plates to move." },
+    { question: "What causes tectonic plates to move?", answers: ["Ocean waves", "Earthquakes", "Convection currents in the mantle", "Gravity alone"], correct: 2, explanation: "Heat inside Earth creates convection currents that push plates. Gravity helps, but it's not the main cause." },
+    { question: "Who proposed the Continental Drift Theory?", answers: ["Charles Darwin", "Isaac Newton", "Alfred Wegener", "Galileo Galilei"], correct: 2, explanation: "Wegener suggested that continents once formed a single landmass. The others made discoveries in other fields, not geology." },
+    { question: "What was the name of the supercontinent?", answers: ["Eurasia", "Pangaea", "Gondwana", "Laurasia"], correct: 1, explanation: "Pangaea was the ancient supercontinent. Gondwana and Laurasia were later smaller parts after it split." },
+    { question: "Which evidence supported Wegener's theory?", answers: ["Fossil similarities on different continents", "Cloud patterns", "Ocean tides", "Human migration"], correct: 0, explanation: "Identical fossils found on distant continents suggest they were once joined. The others are unrelated to plate movement." },
+    { question: "What forms when two continental plates collide?", answers: ["Ocean trench", "Volcano", "Mountain range", "Rift valley"], correct: 2, explanation: "The collision pushes land upward, forming mountains like the Himalayas. Trenches form when oceanic plates subduct." },
+    { question: "When plates move apart, what boundary is it?", answers: ["Convergent", "Divergent", "Transform", "Static"], correct: 1, explanation: "Divergent boundaries pull apart. Convergent boundaries push together, and transform ones slide past each other." },
+    { question: "The boundary between the Philippine Sea Plate and Eurasian Plate is mostly", answers: ["Divergent", "Convergent", "Transform", "None of these"], correct: 1, explanation: "The Philippine Sea Plate subducts under the Eurasian Plate, forming trenches and volcanoes. Divergent boundaries form ridges, not trenches." },
+    { question: "What happens when one plate slides beneath another?", answers: ["Subduction", "Divergence", "Erosion", "Expansion"], correct: 0, explanation: "Subduction occurs when an oceanic plate sinks under a continental plate. Divergence means moving apart." },
+    { question: "What feature forms at divergent oceanic boundaries?", answers: ["Mountain", "Mid-ocean ridge", "Trench", "Plateau"], correct: 1, explanation: "Plates separate and magma rises, creating new crust and ridges. Trenches form at convergent boundaries." },
+    { question: "The Himalayas were formed by what boundary?", answers: ["Divergent", "Transform", "Convergent", "Neutral"], correct: 2, explanation: "India's plate collided with Asia's plate, pushing land upward. Divergent boundaries spread apart instead." },
+    { question: "The San Andreas Fault is what kind of boundary?", answers: ["Convergent", "Divergent", "Transform", "Subduction"], correct: 2, explanation: "Transform boundaries slide past each other horizontally. Convergent and divergent move vertically apart or together." },
+    { question: "What happens at a transform boundary?", answers: ["Plates move apart", "Plates move together", "Plates slide past each other", "Plates melt"], correct: 2, explanation: "This motion causes earthquakes. Melting is more related to subduction zones." },
+    { question: "Which crust is denser?", answers: ["Continental", "Oceanic", "Both equal", "None"], correct: 1, explanation: "Oceanic crust is thinner and denser due to basalt. Continental crust is thicker and lighter (granite)." },
+    { question: "What is the region where a plate sinks called?", answers: ["Ridge zone", "Rift valley", "Subduction zone", "Fault line"], correct: 2, explanation: "A subduction zone is where an oceanic plate dives beneath another. Faults occur at transform boundaries." },
+    { question: "What movement mainly causes earthquakes?", answers: ["Transform movement", "Convergent movement", "Divergent movement", "Stationary plates"], correct: 0, explanation: "Transform boundaries often cause earthquakes as plates grind sideways. Convergent ones cause stronger quakes but less frequent." },
+    { question: "Volcanic island arcs form when", answers: ["Two oceanic plates converge", "Two continental plates diverge", "Plates slide past", "One plate rises"], correct: 0, explanation: "One oceanic plate subducts under another, creating island volcano chains. Divergence forms ridges, not islands." },
+    { question: "Mid-ocean ridges are found at what boundary?", answers: ["Convergent", "Divergent", "Transform", "Subduction"], correct: 1, explanation: "New crust forms as plates pull apart. Convergent boundaries destroy crust instead." },
+    { question: "What layer allows plates to move on top of it?", answers: ["Lithosphere", "Inner core", "Asthenosphere", "Crust"], correct: 2, explanation: "The semi-fluid asthenosphere allows plates above it to move. The lithosphere is the moving part, not the layer that causes movement." }
+  ];
+
+  let questions = [];
+  let playerName = '';
+  let soundEnabled = true;
+  let vibrationEnabled = true;
+
+  function selectRandomQuestions() {
+    const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+    questions = shuffled.slice(0, 10);
+  }
+
+  const mazes = [
+    [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+      [1,0,1,0,1,0,1,1,1,0,1,0,1,0,1],
+      [1,0,1,0,0,0,0,0,1,0,0,0,1,0,1],
+      [1,0,1,1,1,1,1,0,1,1,1,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
+      [1,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+      [1,0,1,0,1,1,1,0,1,1,1,0,1,0,1],
+      [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+      [1,0,1,0,0,0,1,1,1,0,0,0,1,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ],
+    [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+      [1,1,1,0,1,1,1,0,1,0,1,0,1,1,1],
+      [1,0,0,0,0,0,1,0,0,0,1,0,0,0,1],
+      [1,0,1,1,1,0,1,1,1,0,1,0,1,1,1],
+      [1,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,0,1,0,1,1,1,1,1,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+      [1,0,1,1,1,1,1,0,1,1,1,0,1,0,1],
+      [1,0,1,0,0,0,0,0,0,0,1,0,0,0,1],
+      [1,0,0,0,1,1,1,1,1,0,0,0,1,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ]
+  ];
+
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
+// Load wall and floor image textures
+const wallImg = new Image();
+wallImg.src = 'wall.png';
+wallImg.onload = () => draw();
+
+const floorImg = new Image();
+floorImg.src = 'floor.png';
+floorImg.onload = () => draw();
+
+const playerImg = new Image();
+playerImg.src = 'groot.png';
+playerImg.onload = () => draw();
+
+  // ========================================
+  // MAZE GENERATION SYSTEM
+  // ========================================
+  function generateMaze(numAnswerZones) {
+    // Initialize maze grid (1 = wall, 0 = path)
+    currentMaze = Array(MAZE_HEIGHT).fill().map(() => Array(MAZE_WIDTH).fill(1));
+    
+    // Generate maze using recursive backtracking
+    const stack = [];
+    const start = { row: 1, col: 1 };
+    currentMaze[start.row][start.col] = 0;
+    stack.push(start);
+    
+    const directions = [
+      { row: -2, col: 0 }, // Up
+      { row: 2, col: 0 },  // Down
+      { row: 0, col: -2 }, // Left
+      { row: 0, col: 2 }   // Right
+    ];
+    
+    while (stack.length > 0) {
+      const current = stack[stack.length - 1];
+      const neighbors = getUnvisitedNeighbors(current, directions);
+      
+      if (neighbors.length > 0) {
+        const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+        const wall = {
+          row: current.row + (next.row - current.row) / 2,
+          col: current.col + (next.col - current.col) / 2
+        };
+        
+        currentMaze[next.row][next.col] = 0;
+        currentMaze[wall.row][wall.col] = 0;
+        stack.push(next);
+      } else {
+        stack.pop();
+      }
+    }
+    
+    // Add some dead ends
+    addDeadEnds();
+    
+    // Place entry and exit points
+    placeEntryExit();
+    
+    // Place answer zones and decoy zones
+    placeZones(numAnswerZones);
+  }
+
+  function getUnvisitedNeighbors(cell, directions) {
+    const neighbors = [];
+    for (const dir of directions) {
+      const newRow = cell.row + dir.row;
+      const newCol = cell.col + dir.col;
+      
+      if (newRow > 0 && newRow < MAZE_HEIGHT - 1 &&
+          newCol > 0 && newCol < MAZE_WIDTH - 1 &&
+          currentMaze[newRow][newCol] === 1) {
+        neighbors.push({ row: newRow, col: newCol });
+      }
+    }
+    return neighbors;
+  }
+
+  function addDeadEnds() {
+    const deadEndCount = Math.floor((MAZE_HEIGHT * MAZE_WIDTH) / 50);
+    for (let i = 0; i < deadEndCount; i++) {
+      const row = Math.floor(Math.random() * (MAZE_HEIGHT - 2)) + 1;
+      const col = Math.floor(Math.random() * (MAZE_WIDTH - 2)) + 1;
+      
+      if (currentMaze[row][col] === 1) {
+        const neighbors = getPathNeighbors(row, col);
+        if (neighbors.length === 1) {
+          currentMaze[row][col] = 0;
+        }
+      }
+    }
+  }
+
+  function getPathNeighbors(row, col) {
+    const neighbors = [];
+    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    for (const [dr, dc] of directions) {
+      const newRow = row + dr;
+      const newCol = col + dc;
+      if (newRow >= 0 && newRow < MAZE_HEIGHT &&
+          newCol >= 0 && newCol < MAZE_WIDTH &&
+          currentMaze[newRow][newCol] === 0) {
+        neighbors.push({ row: newRow, col: newCol });
+      }
+    }
+    return neighbors;
+  }
+
+  function placeEntryExit() {
+    // Place entry point (top-left area)
+    const entryCandidates = [];
+    for (let row = 1; row < Math.floor(MAZE_HEIGHT / 3); row++) {
+      for (let col = 1; col < Math.floor(MAZE_WIDTH / 3); col++) {
+        if (currentMaze[row][col] === 0) {
+          entryCandidates.push({ row, col });
+        }
+      }
+    }
+    entryPoint = entryCandidates[Math.floor(Math.random() * entryCandidates.length)];
+    
+    // Place exit point (bottom-right area)
+    const exitCandidates = [];
+    for (let row = Math.floor(MAZE_HEIGHT * 2 / 3); row < MAZE_HEIGHT - 1; row++) {
+      for (let col = Math.floor(MAZE_WIDTH * 2 / 3); col < MAZE_WIDTH - 1; col++) {
+        if (currentMaze[row][col] === 0) {
+          exitCandidates.push({ row, col });
+        }
+      }
+    }
+    exitPoint = exitCandidates[Math.floor(Math.random() * exitCandidates.length)];
+    
+    player = { x: entryPoint.col, y: entryPoint.row };
+  }
+
+  function isReachableFromEntry(targetRow, targetCol) {
+    // BFS to check if target is reachable from entry point
+    const visited = new Set();
+    const queue = [{ row: entryPoint.row, col: entryPoint.col }];
+    visited.add(`${entryPoint.row},${entryPoint.col}`);
+    
+    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    
+    while (queue.length > 0) {
+      const current = queue.shift();
+      
+      if (current.row === targetRow && current.col === targetCol) {
+        return true;
+      }
+      
+      for (const [dr, dc] of directions) {
+        const newRow = current.row + dr;
+        const newCol = current.col + dc;
+        const key = `${newRow},${newCol}`;
+        
+        if (newRow >= 0 && newRow < MAZE_HEIGHT &&
+            newCol >= 0 && newCol < MAZE_WIDTH &&
+            currentMaze[newRow][newCol] === 0 &&
+            !visited.has(key)) {
+          visited.add(key);
+          queue.push({ row: newRow, col: newCol });
+        }
+      }
+    }
+    
+    return false;
+  }
+
+  function placeZones(numAnswerZones) {
+    answerZones = [];
+    decoyZones = [];
+    
+    // Get all path cells that are reachable from entry
+    const pathCells = [];
+    for (let row = 0; row < MAZE_HEIGHT; row++) {
+      for (let col = 0; col < MAZE_WIDTH; col++) {
+        if (currentMaze[row][col] === 0 &&
+            !(row === entryPoint.row && col === entryPoint.col) &&
+            !(row === exitPoint.row && col === exitPoint.col) &&
+            isReachableFromEntry(row, col)) { // Only add reachable cells
+          pathCells.push({ row, col });
+        }
+      }
+    }
+    
+    // Shuffle path cells
+    for (let i = pathCells.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pathCells[i], pathCells[j]] = [pathCells[j], pathCells[i]];
+    }
+    
+    // Place answer zones
+    const levelData = levels[currentLevel - 1];
+    const questions = levelData.questions.length > 0 ? levelData.questions : allQuestions.slice(0, numAnswerZones);
+    
+    for (let i = 0; i < numAnswerZones && i < pathCells.length; i++) {
+      const question = questions[i] || {
+        question: `Question ${i + 1}`,
+        answers: ['A', 'B', 'C', 'D'],
+        correct: 0,
+        explanation: 'Default question'
+      };
+      
+      answerZones.push({
+        ...pathCells[i],
+        id: i,
+        completed: false,
+        question: question
+      });
+    }
+    
+    // Place decoy zones (wrong answers that teleport back)
+    const numDecoys = 1; // Only 1 decoy zone
+    for (let i = numAnswerZones; i < numAnswerZones + numDecoys && i < pathCells.length; i++) {
+      decoyZones.push(pathCells[i]);
+    }
+  }
+
+  // ========================================
+  // HIGH SCORE SYSTEM
+  // ========================================
+  function loadHighScore() {
+    if (typeof window.AppInventor !== 'undefined') {
+      try {
+        const savedData = window.AppInventor.getWebViewString();
+        if (savedData && savedData.includes('highScore')) {
+          const data = JSON.parse(savedData);
+          if (data.highScore) highScore = data.highScore;
+        }
+      } catch(e) {}
+    }
+  }
+
+  function saveHighScore() {
+    if (score > highScore) {
+      highScore = score;
+      if (typeof window.AppInventor !== 'undefined') {
+        window.AppInventor.setWebViewString('saveHighScore:' + highScore);
+      }
+    }
+  }
+
+  function loadPlayerSettings() {
+    if (typeof window.AppInventor !== 'undefined') {
+      try {
+        const savedData = window.AppInventor.getWebViewString();
+        if (savedData) {
+          const data = JSON.parse(savedData);
+          if (data.playerName) playerName = data.playerName;
+          if (typeof data.soundEnabled !== 'undefined') soundEnabled = data.soundEnabled;
+          if (typeof data.vibrationEnabled !== 'undefined') vibrationEnabled = data.vibrationEnabled;
+          if (data.highScore) highScore = data.highScore;
+        }
+      } catch(e) {}
+    }
+  }
+
+  // ========================================
+  // APP INVENTOR COMMUNICATION
+  // ========================================
+  function sendGameStateToAppInventor() {
+    const gameData = { 
+      currentLevel,
+      zonesCompleted: completedZones.size,
+      totalZones: answerZones.length,
+      gameState, 
+    };
+    if (typeof window.AppInventor !== 'undefined') {
+      window.AppInventor.setWebViewString(JSON.stringify(gameData));
+    }
+  }
+
+  function processAppInventorInput() {
+    if (typeof window.AppInventor !== 'undefined') {
+      try {
+        const input = window.AppInventor.getWebViewString();
+        if (input && input.length > 0) {
+          // Check for back button command first (string-based, most common)
+          if (input === 'backButtonPressed' || input.includes('backButtonPressed')) {
+            console.log('Received backButtonPressed from App Inventor');
+            handleBackButton();
+            // Clear the command after processing
+            window.AppInventor.setWebViewString('');
+            return;
+          }
+          
+          // Try JSON parse for other commands
+          try {
+          const data = JSON.parse(input);
+          if (data.command === 'restart') restartGame();
+          else if (data.command === 'move' && data.direction) handleAppInventorMove(data.direction);
+          else if (data.command === 'addQuestion' && data.question) questions.push(data.question);
+          else if (data.command === 'backPressed' || data.command === 'backButtonPressed') {
+            handleBackButton();
+          }
+          else if (data.command === 'quitConfirmed') confirmQuitResponse(data.confirmed);
+          else if (data.command === 'loadSettings') loadPlayerSettings();
+            else if (data.command === 'startLevel' && data.level) {
+              currentLevel = Math.max(1, Math.min(TOTAL_LEVELS, parseInt(data.level)));
+              loadLesson();
+              showLessonScreen();
+            }
+          } catch (jsonError) {
+            // If JSON parse fails, try string-based commands
+            if (typeof input === 'string') {
+              if (input.startsWith('startLevel:')) {
+                const level = parseInt(input.split(':')[1]);
+                currentLevel = Math.max(1, Math.min(TOTAL_LEVELS, level));
+                loadLesson();
+                showLessonScreen();
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error processing App Inventor input:', e);
+      }
+    }
+  }
+
+  function handleBackPressed() {
+    if (gameState === 'playing' || gameState === 'paused') {
+      gameState = 'paused';
+      
+      // Send quit confirmation request to MIT App Inventor
+      if (typeof window.AppInventor !== 'undefined') {
+        window.AppInventor.setWebViewString('confirmQuit');
+      }
+    } else {
+      if (typeof window.AppInventor !== 'undefined') {
+        window.AppInventor.setWebViewString('allowBack');
+      }
+    }
+  }
+
+  // Called by MIT App Inventor when user chooses to quit
+  window.confirmQuitGame = function() {
+    handleBackPressed();
+  };
+
+  // Called by MIT App Inventor when user cancels quit
+  window.cancelQuit = function() {
+    gameState = 'playing';
+  };
+
+  function confirmQuitResponse(confirmed) {
+    if (confirmed) {
+      quitGame();
+    } else {
+      gameState = 'playing';
+    }
+  }
+
+  function handleAppInventorMove(direction) {
+    if (gameState !== 'quiz' || isShowingExplanation) return; // Check game state
+    const moves = { up:{dx:0,dy:-1}, down:{dx:0,dy:1}, left:{dx:-1,dy:0}, right:{dx:1,dy:0} };
+    if (moves[direction]) {
+      // Removed speed boost - always move 1 step
+      const newX = player.x + moves[direction].dx;
+      const newY = player.y + moves[direction].dy;
+      if (canMoveTo(newX, newY)) {
+        player.x = newX;
+        player.y = newY;
+        hasMovedYet = true;
+        checkCollisions();
+        sendGameStateToAppInventor();
+        draw(); // Redraw after movement
+      }
+    }
+  }
+
+  // ========================================
+  // LESSON MANAGEMENT
+  // ========================================
+
+  function loadLesson() {
+    const levelData = levels[currentLevel - 1];
+    const currentLevelEl = document.getElementById('currentLevel');
+    const lessonTitleEl = document.getElementById('lessonTitle');
+    if (currentLevelEl) currentLevelEl.textContent = currentLevel;
+    if (lessonTitleEl) lessonTitleEl.textContent = `Level ${currentLevel}: ${levelData.subtopic}`;
+    
+    // Hide the separate image section (images will be inline with text)
+    const imageSection = document.getElementById('lessonImages');
+    if (imageSection) {
+    imageSection.style.display = 'none';
+    imageSection.innerHTML = '';
+    }
+    
+    // Load text content with inline images and video
+    const textElement = document.getElementById('lessonText');
+    if (typeof levelData.lessonContent.text === 'string') {
+      textElement.innerHTML = `<p>${levelData.lessonContent.text.replace(/\n/g, '</p><p>')}</p>`;
+    } else if (Array.isArray(levelData.lessonContent.text)) {
+      let html = '';
+      let videoIndex = 0;
+      const videos = Array.isArray(levelData.lessonContent.video) ? levelData.lessonContent.video : (levelData.lessonContent.video ? [levelData.lessonContent.video] : []);
+      
+      levelData.lessonContent.text.forEach(item => {
+        // Check if this item is an image placeholder
+        const imageMatch = item.match(/^\[IMAGE:\s*(.+?)\]$/i);
+        if (imageMatch) {
+          const imgSrc = imageMatch[1].trim();
+          html += `<div class="lesson-section image-section"><img src="${imgSrc}" alt="Lesson Image" style="width:100%;max-height:300px;object-fit:contain;border-radius:8px;margin:15px 0;"></div>`;
+        } else if (item.match(/^\[VIDEO\]$/i)) {
+          // Insert video link with thumbnail - handle multiple videos
+          if (videoIndex < videos.length) {
+            const videoData = videos[videoIndex];
+            // Handle both old format (string) and new format (object)
+            if (typeof videoData === 'string') {
+              // Old format - check if it's a direct video file or YouTube URL
+              const videoUrl = videoData;
+              const isDirectVideo = /\.(mp4|webm|ogg|mov|avi|wmv|flv|mkv)(\?.*)?$/i.test(videoUrl);
+              const isYouTube = /youtube\.com|youtu\.be/i.test(videoUrl);
+              
+              if (isDirectVideo) {
+                // Direct video file - embed video player
+                // IMPORTANT: Video file must be hosted externally (not in MIT App Inventor assets due to size limits)
+                html += `<div class="lesson-section video-section"><div class="video-embedded"><video controls preload="metadata"><source src="${videoUrl}" type="video/mp4">Your browser does not support the video tag.</video></div></div>`;
+              } else if (isYouTube) {
+                // YouTube URL - external link
+                html += `<div class="lesson-section video-section"><a href="${videoUrl}" class="video-link" target="_blank" rel="noopener noreferrer" onclick="window.videoOpened = true; window.videoOpenedTime = Date.now(); return true;"><div class="video-thumbnail" style="background:#d37556;height:200px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;">Video: ${videoUrl}</div><div class="video-play-overlay"><div class="video-play-icon"></div></div><div class="video-title">Click to watch video</div></a></div>`;
+              } else {
+                // Unknown format - create placeholder link
+                html += `<div class="lesson-section video-section"><a href="#" class="video-link" target="_blank" onclick="alert('Please update video URL in code'); return false;"><div class="video-thumbnail" style="background:#d37556;height:200px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;">Video: ${videoUrl}</div><div class="video-play-overlay"><div class="video-play-icon"></div></div><div class="video-title">Click to watch video</div></a></div>`;
+              }
+            } else {
+              // New format - use provided URL and thumbnail
+              const videoUrl = videoData.url || '#';
+              const videoTitle = videoData.title || 'Watch Video';
+              const videoThumbnail = videoData.thumbnail || 'https://via.placeholder.com/560x315?text=Video+Thumbnail';
+              
+              // Check if it's a direct video file or YouTube URL
+              // NOTE: MIT App Inventor has file size limits, so direct video files may not work
+              // Use YouTube links or host videos externally (e.g., on a web server, Google Drive, etc.)
+              const isDirectVideo = /\.(mp4|webm|ogg|mov|avi|wmv|flv|mkv)(\?.*)?$/i.test(videoUrl);
+              const isYouTube = /youtube\.com|youtu\.be/i.test(videoUrl);
+              
+              if (isDirectVideo) {
+                // Direct video file - embed video player
+                // IMPORTANT: Video file must be hosted externally (not in MIT App Inventor assets due to size limits)
+                // You can host on: Google Drive (with sharing link), Dropbox, your own web server, etc.
+                html += `<div class="lesson-section video-section"><div class="video-embedded"><video controls preload="metadata"><source src="${videoUrl}" type="video/mp4">Your browser does not support the video tag.</video><p style="margin-top:10px;font-weight:bold;color:#8b4a2f;">${videoTitle}</p></div></div>`;
+              } else if (isYouTube) {
+                // YouTube URL - external link (better for mobile performance)
+                // Track when video is opened so we can detect return (mobile-compatible)
+                html += `<div class="lesson-section video-section"><a href="${videoUrl}" class="video-link" target="_blank" rel="noopener noreferrer" onclick="window.videoOpened = true; window.videoOpenedTime = Date.now(); return true;"><img src="${videoThumbnail}" alt="${videoTitle}" class="video-thumbnail" onerror="this.src='https://via.placeholder.com/560x315?text=Video+Thumbnail'"><div class="video-play-overlay"><div class="video-play-icon"></div></div><div class="video-title">${videoTitle}</div></a></div>`;
+              } else {
+                // Unknown format - external link
+                html += `<div class="lesson-section video-section"><a href="${videoUrl}" class="video-link" target="_blank" rel="noopener noreferrer" onclick="window.videoOpened = true; window.videoOpenedTime = Date.now(); return true;"><img src="${videoThumbnail}" alt="${videoTitle}" class="video-thumbnail" onerror="this.src='https://via.placeholder.com/560x315?text=Video+Thumbnail'"><div class="video-play-overlay"><div class="video-play-icon"></div></div><div class="video-title">${videoTitle}</div></a></div>`;
+              }
+            }
+            videoIndex++;
+          }
+        } else if (item.trim() === '') {
+          html += '<p>&nbsp;</p>';
+        } else {
+          html += `<p>${item}</p>`;
+        }
+      });
+      textElement.innerHTML = html;
+    } else {
+      textElement.innerHTML = '<p>Lesson content will be displayed here.</p>';
+    }
+    
+    // Hide the separate video section (video is now inline)
+    const videoSection = document.getElementById('lessonVideo');
+    videoSection.style.display = 'none';
+    
+    // Start Quiz button is now part of the page footer, no scroll detection needed
+  }
+
+  function showLessonScreen() {
+    console.log('showLessonScreen called'); // Debug log
+    
+    // Ensure overlay is hidden
+    const overlay = document.getElementById('howToPlayOverlay');
+    if (overlay) {
+      overlay.classList.remove('active');
+      overlay.style.display = 'none';
+      overlay.style.visibility = 'hidden';
+      overlay.style.opacity = '0';
+      overlay.style.pointerEvents = 'none';
+    }
+    
+    // Hide all modals
+    const failureModal = document.getElementById('failureModal');
+    if (failureModal) {
+      failureModal.classList.remove('active');
+      failureModal.style.display = 'none';
+    }
+    const levelCompleteModal = document.getElementById('levelCompleteModal');
+    if (levelCompleteModal) {
+      levelCompleteModal.classList.remove('active');
+    }
+    const gameCompleteModal = document.getElementById('gameCompleteModal');
+    if (gameCompleteModal) {
+      gameCompleteModal.classList.remove('active');
+    }
+    
+    // Hide game container completely
+    const gameContainer = document.getElementById('gameContainer');
+    if (gameContainer) {
+      gameContainer.style.display = 'none';
+      gameContainer.style.visibility = 'hidden';
+      gameContainer.style.opacity = '0';
+      gameContainer.style.pointerEvents = 'none';
+    }
+    
+    // Hide controls when showing lesson screen
+    const controlsContainer = document.getElementById('controlsContainer');
+    if (controlsContainer) {
+      controlsContainer.style.display = 'none';
+      controlsContainer.style.visibility = 'hidden';
+      controlsContainer.style.opacity = '0';
+      controlsContainer.style.pointerEvents = 'none';
+    }
+    
+    // Show lesson screen
+    const lessonScreen = document.getElementById('lessonScreen');
+    if (lessonScreen) {
+      lessonScreen.style.display = 'flex';
+      lessonScreen.style.visibility = 'visible';
+      lessonScreen.style.opacity = '1';
+      lessonScreen.style.pointerEvents = 'auto';
+      lessonScreen.classList.add('active');
+      console.log('Lesson screen shown'); // Debug log
+    }
+    
+    // Ensure Start Quiz button is clickable
+    const startQuizBtn = document.getElementById('startQuizBtn');
+    if (startQuizBtn) {
+      startQuizBtn.style.pointerEvents = 'auto';
+      startQuizBtn.style.cursor = 'pointer';
+      startQuizBtn.disabled = false;
+      console.log('Start Quiz button enabled'); // Debug log
+    }
+    
+    gameState = 'lesson';
+    console.log('Game state set to lesson'); // Debug log
+  }
+
+  function showQuizScreen() {
+    console.log('showQuizScreen called'); // Debug log
+    
+    // Ensure lesson screen is hidden
+    const lessonScreen = document.getElementById('lessonScreen');
+    if (lessonScreen) {
+      lessonScreen.classList.remove('active');
+      lessonScreen.style.display = 'none';
+      lessonScreen.style.visibility = 'hidden';
+      lessonScreen.style.opacity = '0';
+    }
+    
+    // Ensure overlay is hidden
+    const overlay = document.getElementById('howToPlayOverlay');
+    if (overlay) {
+      overlay.classList.remove('active');
+      overlay.style.display = 'none';
+      overlay.style.visibility = 'hidden';
+      overlay.style.opacity = '0';
+    }
+    
+    // Show game container with all necessary properties
+    const gameContainer = document.getElementById('gameContainer');
+    if (gameContainer) {
+      gameContainer.style.display = 'flex';
+      gameContainer.style.visibility = 'visible';
+      gameContainer.style.opacity = '1';
+      gameContainer.style.pointerEvents = 'auto';
+      console.log('Game container displayed'); // Debug log
+    } else {
+      console.error('Game container not found!'); // Debug log
+    }
+    
+    gameState = 'quiz';
+    console.log('Game state set to quiz'); // Debug log
+    
+    // Ensure controls are visible and clickable
+    const controlsContainer = document.getElementById('controlsContainer');
+    if (controlsContainer) {
+      controlsContainer.style.display = 'flex';
+      controlsContainer.style.visibility = 'visible';
+      controlsContainer.style.opacity = '1';
+      controlsContainer.style.pointerEvents = 'none'; // Container itself doesn't capture events
+      console.log('Controls container displayed'); // Debug log
+    }
+    
+    // Ensure D-pad container is visible and clickable
+    const dpadContainer = document.getElementById('dpadContainer');
+    if (dpadContainer) {
+      dpadContainer.style.pointerEvents = 'auto';
+      dpadContainer.style.visibility = 'visible';
+      dpadContainer.style.opacity = '1';
+      dpadContainer.style.display = 'grid';
+      console.log('D-pad container visible'); // Debug log
+      
+      // Re-initialize D-pad buttons to ensure they're clickable
+      setTimeout(() => {
+        initializeDpadButtons();
+      }, 100);
+    }
+    
+    // Speed boost button removed - no longer needed
+    
+    // NOTIFY APP INVENTOR THAT QUIZ SCREEN IS NOW ACTIVE
+    if (typeof window.AppInventor !== 'undefined') {
+      console.log('Notifying App Inventor: quiz screen active');
+      window.AppInventor.setWebViewString('quizScreenActive');
+    }
+  }
+
+  // ========================================
+  // UI FUNCTIONS
+  // ========================================
+  function showMessage(msg, duration = 2000) {
+    const msgEl = document.getElementById('message');
+    if (msgEl) {
+    msgEl.textContent = msg;
+    msgEl.style.display = 'block';
+      setTimeout(() => { if (msgEl) msgEl.style.display = 'none'; }, duration);
+    }
+  }
+
+  function vibrate(duration) {
+    // Vibration removed - no longer used
+  }
+
+  function updateProgressBar() {
+    const completed = completedZones.size;
+    const total = answerZones.length;
+    const progress = total > 0 ? (completed / total) * 100 : 0;
+    const progressFill = document.getElementById('progressBarFill');
+    const progressText = document.getElementById('progressText');
+    if (progressFill) progressFill.style.width = progress + '%';
+    if (progressText) progressText.textContent = `Zone ${completed}/${total}`;
+  }
+
+
+  function updateCamera() {
+    const targetX = (canvas.width / 2) - (player.x * CELL_SIZE + CELL_SIZE / 2);
+    const targetY = (canvas.height / 2) - (player.y * CELL_SIZE + CELL_SIZE / 2);
+    cameraOffsetX += (targetX - cameraOffsetX) * 0.15;
+    cameraOffsetY += (targetY - cameraOffsetY) * 0.15;
+    const maxOffsetX = 0;
+    const minOffsetX = canvas.width - (MAZE_WIDTH * CELL_SIZE);
+    const maxOffsetY = 0;
+    const minOffsetY = canvas.height - (MAZE_HEIGHT * CELL_SIZE);
+    if (MAZE_WIDTH * CELL_SIZE <= canvas.width) {
+      cameraOffsetX = (canvas.width - MAZE_WIDTH * CELL_SIZE) / 2;
+    } else {
+      cameraOffsetX = Math.max(minOffsetX, Math.min(maxOffsetX, cameraOffsetX));
+    }
+    if (MAZE_HEIGHT * CELL_SIZE <= canvas.height) {
+      cameraOffsetY = (canvas.height - MAZE_HEIGHT * CELL_SIZE) / 2;
+    } else {
+      cameraOffsetY = Math.max(minOffsetY, Math.min(maxOffsetY, cameraOffsetY));
+    }
+  }
+
+  function updateUI() {
+    document.getElementById('quizLevel').textContent = currentLevel;
+    document.getElementById('zonesCompleted').textContent = completedZones.size;
+    document.getElementById('totalZones').textContent = answerZones.length;
+    updateProgressBar();
+  }
+
+  function updateQuestion(question) {
+    document.getElementById('question').textContent = question.question;
+    const answersDiv = document.getElementById('answers');
+    answersDiv.innerHTML = '';
+    
+    // Use consistent coral color for all levels (hybrid approach)
+    const consistentFontColor = '#d37556';
+    
+    question.answers.forEach((ans, idx) => {
+      const div = document.createElement('div');
+      div.className = 'answer';
+      div.style.borderColor = consistentFontColor;
+      div.style.color = consistentFontColor;
+      div.innerHTML = `<b>${String.fromCharCode(65 + idx)}:</b> ${ans}`;
+      answersDiv.appendChild(div);
+    });
+  }
+
+  // ========================================
+  // GAME LOGIC
+  // ========================================
+  function clearSpawnArea() {
+    const maze = mazes[currentMazeIndex];
+    const sx = 7, sy = 6;
+    
+    // Center and 4 cardinal directions = paths (0)
+    const paths = [
+      {x:0,y:0},   // Center
+      {x:1,y:0},   // East
+      {x:-1,y:0},  // West
+      {x:0,y:1},   // South
+      {x:0,y:-1}   // North
+    ];
+    paths.forEach(d=>{
+      const nx = sx+d.x, ny = sy+d.y;
+      if(maze[ny] && maze[ny][nx]!==undefined) maze[ny][nx]=0;
+    });
+    
+    // 4 diagonal directions = blocks (1)
+    const blocks = [
+      {x:1,y:1},   // SE diagonal
+      {x:-1,y:1},  // SW diagonal
+      {x:1,y:-1},  // NE diagonal
+      {x:-1,y:-1}  // NW diagonal
+    ];
+    blocks.forEach(d=>{
+      const nx = sx+d.x, ny = sy+d.y;
+      if(maze[ny] && maze[ny][nx]!==undefined) maze[ny][nx]=1;
+    });
+  }
+
+  function initAnswerZones() {
+    const positions = [
+      {x:3,y:2},
+      {x:11,y:2},
+      {x:3,y:9},
+      {x:11,y:9}
+    ];
+    
+    const shuffledAnswers = questions[currentQuestionIndex].answers.map((answer, idx) => ({
+      answer: answer,
+      isCorrect: idx === questions[currentQuestionIndex].correct
+    }));
+    
+    answerZones = positions.map((pos, idx) => ({
+      x: pos.x,
+      y: pos.y,
+      answer: shuffledAnswers[idx].answer,
+      isCorrect: shuffledAnswers[idx].isCorrect
+    }));
+    
+    answerZones.forEach(zone => {
+      const maze = mazes[currentMazeIndex];
+      if (maze[zone.y] && maze[zone.y][zone.x] !== undefined) {
+        maze[zone.y][zone.x] = 0;
+      }
+      const adjacents = [
+        {dx: 0, dy: 0},
+        {dx: 1, dy: 0},
+        {dx: -1, dy: 0},
+        {dx: 0, dy: 1},
+        {dx: 0, dy: -1}
+      ];
+      adjacents.forEach(adj => {
+        const nx = zone.x + adj.dx;
+        const ny = zone.y + adj.dy;
+        if (ny >= 0 && ny < MAZE_HEIGHT && nx >= 0 && nx < MAZE_WIDTH) {
+          if (maze[ny] && maze[ny][nx] !== undefined) {
+            maze[ny][nx] = 0;
+          }
+        }
+      });
+    });
+  }
+
+  function canMoveTo(x, y) {
+    if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT) return false;
+    return currentMaze[y][x] === 0;
+  }
+
+  function movePlayer(dx, dy) {
+    if (gameState !== 'quiz') return;
+    if (isShowingExplanation) return; // Prevent movement when showing question
+    const now = Date.now();
+    if (now - lastMoveTime < MOVE_DELAY) return;
+    lastMoveTime = now;
+    
+    hasMovedYet = true;
+    
+    // Removed speed boost - always move 1 step
+    const newX = player.x + dx;
+    const newY = player.y + dy;
+    if (canMoveTo(newX, newY)) {
+      player.x = newX;
+      player.y = newY;
+      checkCollisions();
+      sendGameStateToAppInventor();
+      draw(); // Redraw after movement
+    }
+  }
+
+  function checkCollisions() {
+    // Prevent multiple collision checks at once
+    if (isShowingExplanation) return;
+    
+    // Check decoy zones first (teleport immediately and disappear)
+    for (let i = decoyZones.length - 1; i >= 0; i--) {
+      const zone = decoyZones[i];
+      if (zone && zone.row === player.y && zone.col === player.x) {
+        // SOUND EFFECT: Play wrong sound for decoy zone
+        if (typeof window.AppInventor !== 'undefined') {
+          window.AppInventor.setWebViewString('playSound:wrong');
+        }
+        
+        showMessage('Wrong path! Teleporting...', 1500);
+        // Teleport immediately
+        if (lastAnsweredZone) {
+          player = { x: lastAnsweredZone.col, y: lastAnsweredZone.row };
+        } else if (entryPoint) {
+          player = { x: entryPoint.col, y: entryPoint.row };
+        }
+        // Remove the decoy zone after use
+        decoyZones.splice(i, 1);
+        draw();
+        return; // Exit early, don't check other collisions
+      }
+    }
+    
+    // Check answer zones (only if not already showing a question)
+    if (!isShowingExplanation) {
+      for (let i = answerZones.length - 1; i >= 0; i--) {
+        const zone = answerZones[i];
+        if (zone && zone.row === player.y && zone.col === player.x && !zone.completed) {
+          handleAnswerZoneReached(zone);
+          return; // Exit early after handling answer zone
+        }
+      }
+    }
+    
+    // Check exit
+    if (exitPoint && exitPoint.row === player.y && exitPoint.col === player.x) {
+      // Require minimum correct answers (e.g., 4 out of 5) - 80% minimum
+      const minCorrectRequired = Math.max(1, Math.floor(totalZonesNeeded * 0.8)); // 80% minimum (e.g., 4/5)
+      
+      // Check if all zones have been attempted
+      const allZonesAttempted = attemptedZones.size >= totalZonesNeeded;
+      
+      if (allZonesAttempted && correctAnswers >= minCorrectRequired) {
+        completeLevel();
+      } else if (!allZonesAttempted) {
+        showMessage(`You must attempt all ${totalZonesNeeded} answer zones before exiting! (Attempted: ${attemptedZones.size}/${totalZonesNeeded})`, 3000);
+      } else {
+        // All zones attempted but insufficient score
+        // Check if there are any more questions available
+        if (answerZones.length === 0) {
+          // No more questions available - show failure modal
+          showFailureModal();
+      } else {
+        showMessage(`You need at least ${minCorrectRequired} correct answers to proceed! (You have ${correctAnswers}/${totalZonesNeeded} correct)`, 3000);
+        }
+      }
+    }
+  }
+
+  function handleAnswerZoneReached(zone) {
+    if (isShowingExplanation) return; // Prevent multiple triggers
+    if (!zone || !zone.question) {
+      console.error('Invalid zone or question:', zone);
+      return;
+    }
+    
+    isShowingExplanation = true;
+    gameState = 'paused';
+    
+    // Use setTimeout to prevent race conditions
+    setTimeout(() => {
+      updateQuestion(zone.question);
+      // Store current zone for answer checking
+      window.currentZone = zone;
+    }, 50); // Small delay to ensure UI is ready
+  }
+
+  function closeExplanationAndContinue() {
+    if (!isShowingExplanation) return;
+    const zone = window.currentZone;
+    
+    if (!zone) {
+      isShowingExplanation = false;
+      gameState = 'quiz';
+      return;
+    }
+    
+    // Check if answer was selected
+    const selectedAnswer = document.querySelector('.answer.selected');
+    if (!selectedAnswer) {
+      showMessage('Please select an answer first!', 1500);
+      return;
+    }
+    
+    const answerIndex = Array.from(document.querySelectorAll('.answer')).indexOf(selectedAnswer);
+    const isCorrect = answerIndex === zone.question.correct;
+    
+    isShowingExplanation = false;
+    attemptedZones.add(zone.id); // Track that this zone was attempted
+    
+    if (isCorrect) {
+      zone.completed = true;
+      completedZones.add(zone.id);
+      correctAnswers++; // Track correct answer
+      // Track this as the last answered zone
+      lastAnsweredZone = { col: zone.col, row: zone.row };
+      // Remove the answer zone from the array only when correct
+      const zoneIndex = answerZones.findIndex(z => z.id === zone.id);
+      if (zoneIndex !== -1) {
+        answerZones.splice(zoneIndex, 1);
+      }
+      
+      // SOUND EFFECT: Play correct answer sound
+      if (typeof window.AppInventor !== 'undefined') {
+        window.AppInventor.setWebViewString('playSound:correct');
+      }
+      
+      showMessage('Correct! Zone completed!', 1500);
+      updateUI();
+      
+      if (completedZones.size >= totalZonesNeeded) {
+        showMessage('All zones completed! You can now exit!', 2000);
+      }
+    } else {
+      wrongAnswers++; // Track wrong answer
+      // Update lastAnsweredZone even on wrong answer (for decoy teleportation)
+      lastAnsweredZone = { col: zone.col, row: zone.row };
+      // Remove the zone on wrong answer (no teleportation)
+      const zoneIndex = answerZones.findIndex(z => z.id === zone.id);
+      if (zoneIndex !== -1) {
+        answerZones.splice(zoneIndex, 1);
+      }
+      
+      // SOUND EFFECT: Play wrong answer sound
+      if (typeof window.AppInventor !== 'undefined') {
+        window.AppInventor.setWebViewString('playSound:wrong');
+      }
+      
+      showMessage('Wrong answer! Zone removed.', 1500);
+      updateUI();
+      
+      // Check if player has made too many mistakes
+      if (wrongAnswers >= MAX_WRONG_ANSWERS) {
+        console.log('Max wrong answers reached:', wrongAnswers, '>=', MAX_WRONG_ANSWERS); // Debug log
+        // Immediately pause game state
+        gameState = 'paused';
+        isShowingExplanation = false; // Clear explanation state
+        // Use setTimeout to ensure UI updates are complete before showing modal
+        setTimeout(() => {
+          showFailureModal();
+        }, 200); // Increased delay to ensure all UI updates complete
+        return; // Stop further processing
+      }
+    }
+    
+    // Check if game should end (all zones attempted but insufficient score and no more questions)
+    const minCorrectRequired = Math.max(1, Math.floor(totalZonesNeeded * 0.8)); // 80% minimum
+    const allZonesAttempted = attemptedZones.size >= totalZonesNeeded;
+    
+    if (allZonesAttempted && answerZones.length === 0 && correctAnswers < minCorrectRequired) {
+      // All zones attempted, insufficient score, and no more questions available
+      setTimeout(() => {
+        showFailureModal();
+      }, 500);
+      return;
+    }
+    
+    gameState = 'quiz';
+    window.currentZone = null;
+    // Clear question display
+    document.getElementById('question').textContent = 'Get ready...';
+    document.getElementById('answers').innerHTML = '';
+    draw();
+  }
+
+  function completeLevel() {
+    console.log('completeLevel called'); // Debug log
+    gameState = 'paused'; // Pause game
+    
+    // SOUND EFFECT: Play victory/level complete sound
+    if (typeof window.AppInventor !== 'undefined') {
+      window.AppInventor.setWebViewString('playSound:victory');
+    }
+    
+    const levelCompleteModal = document.getElementById('levelCompleteModal');
+    if (!levelCompleteModal) {
+      console.error('Level complete modal element not found!');
+      return;
+    }
+    
+    // Update display
+    const finalZonesEl = document.getElementById('finalZonesCompleted');
+    const finalTotalEl = document.getElementById('finalTotalZones');
+    if (finalZonesEl) finalZonesEl.textContent = completedZones.size;
+    if (finalTotalEl) finalTotalEl.textContent = totalZonesNeeded;
+    
+    // Ensure modal is visible with all necessary properties
+    levelCompleteModal.style.display = 'flex';
+    levelCompleteModal.style.visibility = 'visible';
+    levelCompleteModal.style.opacity = '1';
+    levelCompleteModal.style.pointerEvents = 'auto';
+    levelCompleteModal.classList.add('active');
+    
+    console.log('Level complete modal should now be visible'); // Debug log
+    
+    // Notify lessons.html that this level is completed
+    notifyLevelCompleted(currentLevel);
+  }
+  
+  function notifyLevelCompleted(completedLevel) {
+    // Notify App Inventor
+    if (typeof window.AppInventor !== 'undefined') {
+      window.AppInventor.setWebViewString(`levelCompleted:${completedLevel}`);
+    }
+    
+    // Also try to notify parent window (lessons.html) if opened in iframe or via postMessage
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({
+        type: 'levelCompleted',
+        level: completedLevel
+      }, '*');
+    }
+    
+    // For web testing, store in localStorage
+    try {
+      const completedLevels = JSON.parse(localStorage.getItem('completedLevels') || '[]');
+      if (!completedLevels.includes(completedLevel)) {
+        completedLevels.push(completedLevel);
+        localStorage.setItem('completedLevels', JSON.stringify(completedLevels));
+      }
+    } catch (e) {
+      console.error('Error saving completed level:', e);
+    }
+  }
+
+  function nextLevel() {
+    console.log('nextLevel called for level:', currentLevel); // Debug log
+    
+    // Hide level complete modal with smooth transition
+    const levelCompleteModal = document.getElementById('levelCompleteModal');
+    if (levelCompleteModal) {
+      levelCompleteModal.classList.remove('active');
+      levelCompleteModal.style.opacity = '0';
+      levelCompleteModal.style.visibility = 'hidden';
+      levelCompleteModal.style.pointerEvents = 'none';
+      setTimeout(() => {
+        levelCompleteModal.style.display = 'none';
+      }, 200);
+    }
+    
+    // Hide game container smoothly
+    const gameContainer = document.getElementById('gameContainer');
+    if (gameContainer) {
+      gameContainer.style.opacity = '0';
+      gameContainer.style.visibility = 'hidden';
+      setTimeout(() => {
+        gameContainer.style.display = 'none';
+      }, 200);
+    }
+    
+    // Hide controls smoothly
+    const controlsContainer = document.getElementById('controlsContainer');
+    if (controlsContainer) {
+      controlsContainer.style.opacity = '0';
+      controlsContainer.style.visibility = 'hidden';
+      setTimeout(() => {
+        controlsContainer.style.display = 'none';
+      }, 200);
+    }
+    
+    // Reset game state
+    completedZones.clear();
+    attemptedZones.clear();
+    lastAnsweredZone = null;
+    correctAnswers = 0;
+    wrongAnswers = 0;
+    hasMovedYet = false;
+    isShowingExplanation = false;
+    window.currentZone = null;
+    gameState = 'lesson'; // Set to lesson state
+    
+    // Notify that level is completed
+    // App Inventor will handle either continuing to next level or going back to menu
+    if (typeof window.AppInventor !== 'undefined') {
+      console.log('Notifying App Inventor: level completed, waiting for navigation');
+      window.AppInventor.setWebViewString(`levelCompleted:${currentLevel}`);
+      
+      // App Inventor will handle the next level continuation automatically
+      // If all levels are done, App Inventor will send goBackToMenu
+      // For seamless flow, wait a moment then go back to lesson menu
+      setTimeout(() => {
+        // Check if App Inventor wants us to continue or go back
+        // If no next level command received, go back to menu
+        window.AppInventor.setWebViewString('goBackToMenu');
+        
+        // Also show lesson screen as fallback (in case App Inventor doesn't handle it)
+        setTimeout(() => {
+          loadLesson();
+          showLessonScreen();
+          console.log('Lesson screen shown after nextLevel'); // Debug log
+        }, 300);
+      }, 150);
+    } else {
+      // For web testing, redirect back to lessons.html
+      setTimeout(() => {
+        window.location.href = 'lessons.html';
+      }, 200);
+    }
+  }
+  
+  function showFailureModal() {
+    console.log('showFailureModal called, wrongAnswers:', wrongAnswers); // Debug log
+    gameState = 'paused';
+    
+    // SOUND EFFECT: Play game over sound
+    if (typeof window.AppInventor !== 'undefined') {
+      window.AppInventor.setWebViewString('playSound:gameover');
+    }
+    
+    const failureModal = document.getElementById('failureModal');
+    if (!failureModal) {
+      console.error('Failure modal element not found!');
+      return;
+    }
+    
+    // Update wrong count display
+    const wrongCountEl = document.getElementById('failureWrongCount');
+    if (wrongCountEl) {
+      wrongCountEl.textContent = wrongAnswers;
+    }
+    
+    // Ensure modal is visible with all necessary properties
+    failureModal.style.display = 'flex';
+    failureModal.style.visibility = 'visible';
+    failureModal.style.opacity = '1';
+    failureModal.style.pointerEvents = 'auto';
+    failureModal.classList.add('active');
+    
+    console.log('Failure modal should now be visible'); // Debug log
+  }
+  
+  function backToLesson() {
+    console.log('backToLesson called for level:', currentLevel); // Debug log
+    
+    // Hide failure modal completely with smooth transition
+    const failureModal = document.getElementById('failureModal');
+    if (failureModal) {
+      failureModal.classList.remove('active');
+      failureModal.style.opacity = '0';
+      failureModal.style.visibility = 'hidden';
+      failureModal.style.pointerEvents = 'none';
+      setTimeout(() => {
+        failureModal.style.display = 'none';
+      }, 200);
+    }
+    
+    // Also hide any other modals that might be showing
+    const levelCompleteModal = document.getElementById('levelCompleteModal');
+    if (levelCompleteModal) {
+      levelCompleteModal.classList.remove('active');
+      levelCompleteModal.style.display = 'none';
+      levelCompleteModal.style.visibility = 'hidden';
+      levelCompleteModal.style.opacity = '0';
+    }
+    
+    const gameOver = document.getElementById('gameOver');
+    if (gameOver) {
+      gameOver.style.display = 'none';
+      gameOver.style.visibility = 'hidden';
+      gameOver.style.opacity = '0';
+    }
+    
+    // Reset quiz state completely
+    completedZones.clear();
+    attemptedZones.clear();
+    lastAnsweredZone = null;
+    correctAnswers = 0;
+    wrongAnswers = 0;
+    hasMovedYet = false;
+    isShowingExplanation = false;
+    window.currentZone = null;
+    gameState = 'lesson'; // Set to lesson state
+    
+    // Clear question display
+    const questionEl = document.getElementById('question');
+    if (questionEl) questionEl.textContent = 'Get ready...';
+    const answersEl = document.getElementById('answers');
+    if (answersEl) answersEl.innerHTML = '';
+    
+    // Hide game container completely with smooth transition
+    const gameContainer = document.getElementById('gameContainer');
+    if (gameContainer) {
+      gameContainer.style.opacity = '0';
+      gameContainer.style.visibility = 'hidden';
+      gameContainer.style.pointerEvents = 'none';
+      setTimeout(() => {
+        gameContainer.style.display = 'none';
+      }, 200);
+    }
+    
+    // Hide controls with smooth transition
+    const controlsContainer = document.getElementById('controlsContainer');
+    if (controlsContainer) {
+      controlsContainer.style.opacity = '0';
+      controlsContainer.style.visibility = 'hidden';
+      setTimeout(() => {
+        controlsContainer.style.display = 'none';
+      }, 200);
+    }
+    
+    // Hide overlay if it's showing
+    const overlay = document.getElementById('howToPlayOverlay');
+    if (overlay) {
+      overlay.classList.remove('active');
+      overlay.style.display = 'none';
+      overlay.style.visibility = 'hidden';
+      overlay.style.opacity = '0';
+    }
+    
+    // Load lesson content and show lesson screen smoothly
+    loadLesson();
+    
+    // Use requestAnimationFrame for smooth transition
+    requestAnimationFrame(() => {
+      showLessonScreen();
+      console.log('Lesson screen shown after backToLesson'); // Debug log
+    });
+  }
+  
+  function retryQuiz() {
+    console.log('retryQuiz called for level:', currentLevel); // Debug log
+    
+    // Hide all modals and overlays
+    const hideElement = (id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.remove('active');
+        el.style.display = 'none';
+        el.style.visibility = 'hidden';
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+      }
+    };
+    
+    // Hide all possible modals
+    ['failureModal', 'gameOver', 'levelCompleteModal', 'howToPlayOverlay', 'lessonScreen'].forEach(hideElement);
+    
+    // Reset game state for current level
+    const currentLevelData = levels[currentLevel - 1];
+    if (currentLevelData) {
+      // Reset only the necessary state for the current level
+      completedZones.clear();
+      attemptedZones.clear();
+      lastAnsweredZone = null;
+      correctAnswers = 0;
+      wrongAnswers = 0;
+      hasMovedYet = false;
+      isShowingExplanation = false;
+      window.currentZone = null;
+      cameraOffsetX = 0;
+      cameraOffsetY = 0;
+      gameState = 'paused';
+      
+      // Clear question display
+      const questionEl = document.getElementById('question');
+      if (questionEl) questionEl.textContent = 'Get ready...';
+      const answersEl = document.getElementById('answers');
+      if (answersEl) answersEl.innerHTML = '';
+      
+      // Show game container
+      const gameContainer = document.getElementById('gameContainer');
+      if (gameContainer) {
+        gameContainer.style.display = 'flex';
+        gameContainer.style.visibility = 'visible';
+        gameContainer.style.opacity = '1';
+        gameContainer.style.pointerEvents = 'auto';
+      }
+      
+      // Reset and show the canvas
+      const canvas = document.getElementById('canvas');
+      if (canvas) {
+        canvas.width = Math.min(MAZE_WIDTH * CELL_SIZE, window.innerWidth * 0.95);
+        canvas.height = Math.min(MAZE_HEIGHT * CELL_SIZE, window.innerHeight * 0.5);
+        canvas.style.display = 'block';
+        canvas.style.visibility = 'visible';
+      }
+      
+      // Show stats
+      const statsEl = document.getElementById('stats');
+      if (statsEl) {
+        statsEl.style.display = 'flex';
+        statsEl.style.visibility = 'visible';
+      }
+      
+      // Ensure controls container and D-pad are visible
+      const controlsContainer = document.getElementById('controlsContainer');
+      if (controlsContainer) {
+        controlsContainer.style.display = 'flex';
+        controlsContainer.style.visibility = 'visible';
+        controlsContainer.style.opacity = '1';
+        controlsContainer.style.pointerEvents = 'auto';
+      }
+      const dpadContainer = document.getElementById('dpadContainer');
+      if (dpadContainer) {
+        dpadContainer.style.display = 'grid';
+        dpadContainer.style.visibility = 'visible';
+        dpadContainer.style.opacity = '1';
+        dpadContainer.style.pointerEvents = 'auto';
+        initializeDpadButtons();
+      }
+      
+      // Start the game with a small delay to ensure smooth transition
+      setTimeout(() => {
+        // Restart quiz flow directly (avoids reloading lesson screen)
+        actuallyStartQuiz();
+        
+        // Force a redraw
+        if (canvas) {
+          draw();
+        }
+        
+        console.log('Level restarted after retry');
+      }, 150);
+    } else {
+      console.error('Failed to find level data for level:', currentLevel);
+      // Fallback to showing the lesson screen if level data is not found
+      showLessonScreen();
+    }
+  }
+
+  function startQuiz() {
+    console.log('startQuiz called'); // Debug log
+    const levelData = levels[currentLevel - 1];
+    if (!levelData) {
+      console.error('Level data not found for level:', currentLevel);
+      return;
+    }
+    
+    // NOTIFY APP INVENTOR TO SWITCH TO SCREEN 3 (GAME SCREEN)
+    // NOTE: Screen 3 should already be open, but we notify App Inventor to ensure WebViewerGame is visible
+    if (typeof window.AppInventor !== 'undefined') {
+      console.log('Notifying App Inventor to switch to Screen 3');
+      window.AppInventor.setWebViewString('switchToScreen3');
+    } else {
+      console.log('App Inventor not detected - proceeding with local HTML navigation');
+    }
+    
+    // Get all elements first
+    const gameContainer = document.getElementById('gameContainer');
+    const lessonScreen = document.getElementById('lessonScreen');
+    const overlay = document.getElementById('howToPlayOverlay');
+    const resumeText = document.getElementById('resumeText');
+    
+    // CRITICAL: Proceed with showing overlay regardless of App Inventor response
+    // Don't wait for App Inventor - the HTML should work independently
+    
+    // CRITICAL: Hide lesson screen IMMEDIATELY with all methods to prevent any flash
+    if (lessonScreen) {
+      // Remove transition temporarily for instant hide
+      const originalTransition = lessonScreen.style.transition;
+      lessonScreen.style.transition = 'none';
+      
+      lessonScreen.style.visibility = 'hidden';
+      lessonScreen.style.opacity = '0';
+      lessonScreen.style.pointerEvents = 'none';
+      lessonScreen.classList.remove('active');
+      lessonScreen.style.display = 'none';
+      
+      // Force immediate reflow
+      void lessonScreen.offsetHeight;
+      
+      // Restore transition after hiding
+      lessonScreen.style.transition = originalTransition;
+    }
+    
+    // IMPORTANT: Make sure game container is HIDDEN first
+    if (gameContainer) {
+      gameContainer.style.display = 'none';
+      gameContainer.style.visibility = 'hidden';
+      gameContainer.style.pointerEvents = 'none';
+    }
+    
+    // Show How to Play overlay IMMEDIATELY (before any rendering delay)
+    if (overlay) {
+      // Remove transition temporarily for instant show
+      const originalOverlayTransition = overlay.style.transition;
+      overlay.style.transition = 'none';
+      
+      // Set overlay to be visible first (before display)
+      overlay.style.visibility = 'visible';
+      overlay.style.opacity = '1';
+      overlay.style.pointerEvents = 'auto';
+      overlay.style.display = 'flex';
+      overlay.classList.add('active');
+      
+      // Force immediate reflow
+      void overlay.offsetHeight;
+      
+      // Restore transition after showing
+      overlay.style.transition = originalOverlayTransition;
+      
+      console.log('How to Play overlay shown'); // Debug log
+    } else {
+      console.error('How to Play overlay not found!'); // Debug log
+    }
+    
+    // Hide the resume text (we're starting fresh)
+    if (resumeText) resumeText.style.display = 'none';
+    
+    // Set game state to paused (overlay is showing)
+    gameState = 'paused';
+    console.log('Game state set to paused'); // Debug log
+  }
+  
+  // ========================================
+  // LEVEL-SPECIFIC STYLING (Consistent Maze Design, Varied Backgrounds Only)
+  // ========================================
+  function applyLevelSpecificStyling() {
+    let bgImage;
+    
+    // Keep maze design consistent (same as Level 1) - only vary backgrounds
+    const consistentFontColor = '#d37556'; // Coral - consistent for all levels
+    const consistentTabColor = '#ffffff'; // White tabs - consistent for all levels
+    
+    // Only backgrounds vary per level
+    if (currentLevel === 1 || currentLevel === 6) {
+      // Level 1 and 6: default theme
+      bgImage = 'background.png';
+    } else if (currentLevel === 2 || currentLevel === 3) {
+      // Level 2-3: nature theme
+      bgImage = 'nature.png';
+    } else if (currentLevel === 4 || currentLevel === 5) {
+      // Level 4-5: koi theme
+      bgImage = 'download.jpg';
+    }
+    
+    // Set background image (varied per level)
+    document.body.style.backgroundImage = `url('${bgImage}')`;
+    
+    // Use single floor design for all levels
+    floorImg.src = 'floor.png';
+    floorImg.onload = () => draw();
+    
+    // Apply consistent UI colors (same for all levels)
+    const questionBox = document.getElementById('questionBox');
+    if (questionBox) {
+      questionBox.style.borderColor = consistentFontColor;
+    }
+    
+    const question = document.getElementById('question');
+    if (question) {
+      question.style.color = consistentFontColor;
+    }
+    
+    const answers = document.querySelectorAll('.answer');
+    answers.forEach(answer => {
+      answer.style.borderColor = consistentFontColor;
+      answer.style.color = consistentFontColor;
+    });
+    
+    const dpadButtons = document.querySelectorAll('.dpad-btn');
+    dpadButtons.forEach(btn => {
+      btn.style.borderColor = consistentFontColor;
+      btn.style.color = consistentFontColor;
+      btn.style.background = `rgba(255, 255, 255, 0.95)`; // White tabs
+    });
+    
+    const stats = document.getElementById('stats');
+    if (stats) {
+      stats.style.background = `rgba(211, 117, 86, 0.95)`; // Coral background
+    }
+  }
+  
+  function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? 
+      `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
+      '255, 255, 255';
+  }
+
+  function actuallyStartQuiz(retryCount = 0) {
+    // This function is called after user clicks "Start Game" in How to Play overlay
+    // CRITICAL FIX: Wait for canvas to be properly sized before initializing maze
+    const canvas = document.getElementById('canvas');
+    if (!canvas) {
+      console.error('Canvas element not found!');
+      return;
+    }
+    
+    const overlay = document.getElementById('howToPlayOverlay');
+    
+    // Ensure canvas has sensible dimensions before measuring
+    const targetCanvasWidth = Math.min(MAZE_WIDTH * CELL_SIZE, window.innerWidth * 0.95);
+    const targetCanvasHeight = Math.min(MAZE_HEIGHT * CELL_SIZE, window.innerHeight * 0.5);
+    canvas.width = targetCanvasWidth;
+    canvas.height = targetCanvasHeight;
+    canvas.style.width = `${targetCanvasWidth}px`;
+    canvas.style.height = `${targetCanvasHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.visibility = 'visible';
+    
+    // Temporarily ensure the game container is measurable
+    const gameContainer = document.getElementById('gameContainer');
+    let previousDisplay = '';
+    let previousVisibility = '';
+    let previousPointerEvents = '';
+    if (gameContainer) {
+      previousDisplay = gameContainer.style.display;
+      previousVisibility = gameContainer.style.visibility;
+      previousPointerEvents = gameContainer.style.pointerEvents;
+      gameContainer.style.display = 'flex';
+      gameContainer.style.visibility = 'hidden';
+      gameContainer.style.pointerEvents = 'none';
+    }
+    
+    // Check if canvas has non-zero dimensions (critical for App Inventor WebViewer)
+    const canvasRect = canvas.getBoundingClientRect();
+    if (canvasRect.width === 0 || canvasRect.height === 0) {
+      // Restore original container styles before retrying
+      if (gameContainer) {
+        gameContainer.style.display = previousDisplay;
+        gameContainer.style.visibility = previousVisibility;
+        gameContainer.style.pointerEvents = previousPointerEvents;
+      }
+      if (retryCount < 20) { // Max 20 retries = 2 seconds
+        console.warn(`Canvas has zero dimensions, retrying... (attempt ${retryCount + 1}/20)`);
+        setTimeout(() => actuallyStartQuiz(retryCount + 1), 100);
+        return;
+      } else {
+        console.error('Canvas failed to initialize after 20 attempts!');
+        alert('Failed to start game. Please try again.');
+        return;
+      }
+    }
+    
+    // Restore container styles now that measurement succeeded
+    if (gameContainer) {
+      gameContainer.style.display = previousDisplay || 'none';
+      gameContainer.style.visibility = previousVisibility || 'hidden';
+      gameContainer.style.pointerEvents = previousPointerEvents || 'none';
+    }
+    
+    console.log('Canvas initialized: ' + canvas.width + 'x' + canvas.height + ', Rect: ' + canvasRect.width + 'x' + canvasRect.height);
+    
+    const levelData = levels[currentLevel - 1];
+
+    
+    // NOTIFY APP INVENTOR THAT GAME IS STARTING (ensure Screen 3 is active)
+    if (typeof window.AppInventor !== 'undefined') {
+      console.log('Notifying App Inventor: game starting on Screen 3');
+      window.AppInventor.setWebViewString('gameStarting:Screen3');
+    }
+    // Apply level-specific styling
+    applyLevelSpecificStyling();
+    
+    // Reset state BEFORE generating maze
+    completedZones.clear();
+    attemptedZones.clear(); // Reset attempted zones
+    lastAnsweredZone = null; // Reset last answered zone
+    totalZonesNeeded = levelData.answerZones; // Store total zones needed
+    correctAnswers = 0; // Reset correct answers counter
+    wrongAnswers = 0; // Reset wrong answers counter
+    hasMovedYet = false;
+    cameraOffsetX = 0;
+    cameraOffsetY = 0;
+    
+    // Generate new maze (while container is still hidden)
+    generateMaze(levelData.answerZones);
+    
+    // Update UI and draw (while container is still hidden)
+    updateUI();
+    draw();
+    
+    // Now hide overlay and show game container in one smooth transition
+    // Use requestAnimationFrame to ensure everything is ready
+    requestAnimationFrame(() => {
+      // Ensure lesson screen is completely hidden (double-check)
+      const lessonScreen = document.getElementById('lessonScreen');
+      if (lessonScreen) {
+        lessonScreen.style.visibility = 'hidden';
+        lessonScreen.style.opacity = '0';
+        lessonScreen.classList.remove('active');
+        lessonScreen.style.display = 'none';
+      }
+      
+      // Hide overlay with fade out
+      if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.visibility = 'hidden';
+        overlay.classList.remove('active');
+        // Delay display:none to allow fade out
+        setTimeout(() => {
+          overlay.style.display = 'none';
+        }, 200);
+      }
+      
+      // Show quiz screen (this will show the game container)
+      showQuizScreen();
+      
+      // NOTIFY APP INVENTOR THAT GAME SCREEN IS NOW VISIBLE
+      if (typeof window.AppInventor !== 'undefined') {
+        window.AppInventor.setWebViewString('gameScreenVisible');
+      }
+      
+      // Force a redraw to ensure everything is displayed correctly
+      requestAnimationFrame(() => {
+        draw();
+        
+        // Double-check that lesson screen is completely hidden
+        const lessonScreenCheck = document.getElementById('lessonScreen');
+        if (lessonScreenCheck) {
+          lessonScreenCheck.style.display = 'none';
+          lessonScreenCheck.style.visibility = 'hidden';
+          lessonScreenCheck.style.opacity = '0';
+          lessonScreenCheck.style.pointerEvents = 'none';
+          lessonScreenCheck.classList.remove('active');
+        }
+        
+        // Ensure game container is visible
+        const gameContainerCheck = document.getElementById('gameContainer');
+        if (gameContainerCheck) {
+          gameContainerCheck.style.display = 'flex';
+          gameContainerCheck.style.visibility = 'visible';
+          gameContainerCheck.style.opacity = '1';
+          gameContainerCheck.style.pointerEvents = 'auto';
+        }
+      });
+    });
+  }
+
+  function handleCanvasTouch(e) {
+    e.preventDefault();
+    if (isShowingExplanation) { 
+      closeExplanationAndContinue(); 
+      return; 
+    }
+    if (gameState !== 'quiz') return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
+    const touch = e.touches ? e.touches[0] : e;
+    const clientX = touch.clientX - rect.left;
+    const clientY = touch.clientY - rect.top;
+    const x = clientX * scaleX;
+    const y = clientY * scaleY;
+    
+    const worldX = x - cameraOffsetX;
+    const worldY = y - cameraOffsetY;
+    const cellX = Math.floor(worldX / CELL_SIZE);
+    const cellY = Math.floor(worldY / CELL_SIZE);
+    
+    if (cellX === player.x && cellY === player.y) {
+      isDragging = true; dragStartX = x; dragStartY = y;
+    }
+  }
+
+  function handleCanvasMove(e) {
+    if (!isDragging || gameState !== 'quiz' || isShowingExplanation) return;
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
+    const touch = e.touches ? e.touches[0] : e;
+    const x = (touch.clientX - rect.left) * scaleX, y = (touch.clientY - rect.top) * scaleY;
+    const deltaX = x - dragStartX, deltaY = y - dragStartY;
+    const threshold = CELL_SIZE / 2;
+    if (Math.abs(deltaX) > threshold || Math.abs(deltaY) > threshold) {
+      if (Math.abs(deltaX) > Math.abs(deltaY)) movePlayer(deltaX > 0 ? 1 : -1, 0);
+      else movePlayer(0, deltaY > 0 ? 1 : -1);
+      dragStartX = x; dragStartY = y;
+    }
+  }
+
+  function handleCanvasEnd(e) { isDragging = false; }
+
+  // ========================================
+  // CONTROL BINDINGS - OPTIMIZED TO PREVENT LAG
+  // ========================================
+  const dpadMap = {
+    'dpad-up': [0, -1],
+    'dpad-down': [0, 1],
+    'dpad-left': [-1, 0],
+    'dpad-right': [1, 0]
+  };
+
+  // Optimized button handler to prevent lag and sticking
+  function createButtonHandler(dx, dy) {
+    let lastCall = 0;
+    let isProcessing = false; // Prevent overlapping calls
+    return function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (gameState !== 'quiz' || isShowingExplanation) return; // Check game state
+      if (isProcessing) return; // Prevent overlapping calls
+      const now = Date.now();
+      if (now - lastCall < MOVE_DELAY) return;
+      lastCall = now;
+      isProcessing = true;
+      // Use setTimeout instead of requestAnimationFrame for more reliable timing
+      setTimeout(() => {
+        movePlayer(dx, dy);
+        isProcessing = false;
+      }, 0);
+    };
+  }
+
+  // Store button handlers to prevent duplicate listeners
+  const buttonHandlers = new Map();
+  
+  // Initialize D-pad buttons - ensure they're set up when DOM is ready
+  function initializeDpadButtons() {
+  Object.keys(dpadMap).forEach(id => {
+    const btn = document.getElementById(id);
+      if (!btn) {
+        console.warn('D-pad button not found:', id);
+        return;
+      }
+      
+      // Remove old handlers if they exist
+      if (buttonHandlers.has(id)) {
+        const oldHandler = buttonHandlers.get(id);
+        btn.removeEventListener('touchstart', oldHandler);
+        btn.removeEventListener('mousedown', oldHandler);
+        btn.removeEventListener('click', oldHandler);
+      }
+      
+    const [dx, dy] = dpadMap[id];
+    const handler = createButtonHandler(dx, dy);
+      buttonHandlers.set(id, handler);
+    
+      // Add event listeners
+    btn.addEventListener('touchstart', handler, { passive: false });
+    btn.addEventListener('mousedown', handler, { passive: false });
+      btn.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
+      btn.addEventListener('click', handler, { passive: false });
+    btn.addEventListener('contextmenu', (e) => e.preventDefault());
+      
+      // Ensure button is clickable
+      btn.style.pointerEvents = 'auto';
+      btn.style.cursor = 'pointer';
+      
+      console.log('D-pad button initialized:', id);
+    });
+  }
+  
+  // Initialize buttons when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeDpadButtons);
+  } else {
+    initializeDpadButtons();
+  }
+
+  // Speed boost feature removed - no longer needed
+
+  function handleKeyPress(e) {
+    if (gameState !== 'quiz') return;
+    if (isShowingExplanation) return; // Prevent movement when showing question
+    switch(e.key) {
+      case 'ArrowUp': case 'w': case 'W': movePlayer(0,-1); e.preventDefault(); break;
+      case 'ArrowDown': case 's': case 'S': movePlayer(0,1); e.preventDefault(); break;
+      case 'ArrowLeft': case 'a': case 'A': movePlayer(-1,0); e.preventDefault(); break;
+      case 'ArrowRight': case 'd': case 'D': movePlayer(1,0); e.preventDefault(); break;
+    }
+  }
+
+  // Only add event listeners if canvas exists
+  if (canvas) {
+  canvas.addEventListener('touchstart', handleCanvasTouch);
+  canvas.addEventListener('touchmove', handleCanvasMove);
+  canvas.addEventListener('touchend', handleCanvasEnd);
+  canvas.addEventListener('mousedown', handleCanvasTouch);
+  canvas.addEventListener('mousemove', handleCanvasMove);
+  canvas.addEventListener('mouseup', handleCanvasEnd);
+  }
+  window.addEventListener('keydown', handleKeyPress);
+  
+  // Fix popup click - only close when clicking outside content area
+  const explanationPopup = document.getElementById('explanationPopup');
+  if (explanationPopup) {
+    explanationPopup.addEventListener('click', (e) => {
+    // Don't close if clicking on answer buttons or inside content area
+    if (e.target.classList.contains('answer') || e.target.closest('#explanationContent')) {
+      return;
+    }
+    // Only close if clicking on the popup background
+    if (e.target.id === 'explanationPopup') {
+      closeExplanationAndContinue();
+    }
+  });
+  }
+
+  // ========================================
+  // GAME FLOW
+  // ========================================
+  function nextQuestion() {
+    if (currentQuestionIndex + 1 >= questions.length) { endGame(true); return; }
+    currentQuestionIndex++; currentMazeIndex = (currentMazeIndex + 1) % mazes.length;
+    player = { x:7, y:6 }; monsters = [{ x:13,y:10 }, { x:1,y:1 }]; 
+    timeRemaining=30; targetCell=null; cameraOffsetX=0; cameraOffsetY=0;
+    
+    hasMovedYet = false;
+    
+    initAnswerZones(); clearSpawnArea(); updateQuestion(); updateUI();
+  }
+
+  function moveMonsters() {
+    if (gameState !== 'playing') return;
+    let movedAny = false;
+    monsters.forEach(monster => {
+      if (Math.random() > 0.3) return;
+      const chasePlayer = Math.random() > 0.6;
+      let newX = monster.x, newY = monster.y;
+      if (chasePlayer) {
+        if (player.x > monster.x && canMoveMonsterTo(monster.x+1,monster.y)) newX = monster.x+1;
+        else if (player.x < monster.x && canMoveMonsterTo(monster.x-1,monster.y)) newX = monster.x-1;
+        else if (player.y > monster.y && canMoveMonsterTo(monster.x,monster.y+1)) newY = monster.y+1;
+        else if (player.y < monster.y && canMoveMonsterTo(monster.x,monster.y-1)) newY = monster.y-1;
+      } else {
+        const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
+        const dir = dirs[Math.floor(Math.random()*dirs.length)];
+        if (canMoveMonsterTo(monster.x+dir.dx, monster.y+dir.dy)) { newX = monster.x+dir.dx; newY = monster.y+dir.dy; }
+      }
+      if (newX !== monster.x || newY !== monster.y) { monster.x = newX; monster.y = newY; movedAny = true; }
+    });
+    checkCollisions();
+    if (movedAny) draw();
+  }
+
+  function canMoveMonsterTo(x,y) {
+    if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT) return false;
+    
+    const isAnswerZone = answerZones.some(zone => zone.x === x && zone.y === y);
+    if (isAnswerZone) {
+      return false;
+    }
+    
+    return mazes[currentMazeIndex][y][x] === 0;
+  }
+
+  function checkGameOver() {
+    if (lives <= 0) endGame(false);
+  }
+
+  function endGame(won) {
+    gameState = 'gameover';
+    stopGameLoop(); // Stop game loop when game ends
+    if (movementInterval) { clearInterval(movementInterval); movementInterval = null; }
+    if (timerInterval) clearInterval(timerInterval);
+    if (monsterInterval) clearInterval(monsterInterval);
+    if (lifeRegenInterval) clearInterval(lifeRegenInterval);
+    
+    // Speed boost intervals removed - feature disabled
+
+    saveHighScore();
+    saveLifeState();
+
+    const accuracy = questionsAnswered > 0 ? Math.round((correctAnswers / questionsAnswered) * 100) : 0;
+    let titleText = '';
+    if (won) {
+      titleText = 'Congratulations!';
+      // SOUND EFFECT 3: Play congratulations/victory sound here
+      if (typeof window.AppInventor !== 'undefined') {
+        window.AppInventor.setWebViewString('playSound:victory');
+      }
+    } else if (correctAnswers === 0 && questionsAnswered > 0) {
+      titleText = 'Better Luck Next Time!';
+      // SOUND EFFECT: Play game over sound here
+      if (typeof window.AppInventor !== 'undefined') {
+        window.AppInventor.setWebViewString('playSound:gameover');
+      }
+    } else {
+      titleText = 'Game Over!';
+      // SOUND EFFECT: Play game over sound here
+      if (typeof window.AppInventor !== 'undefined') {
+        window.AppInventor.setWebViewString('playSound:gameover');
+      }
+    }
+    
+    document.getElementById('gameOverTitle').textContent = titleText;
+    document.getElementById('finalScore').textContent = score;
+    document.getElementById('highScore').textContent = highScore;
+
+    const statsHTML = `
+      <div class="statRow"><span class="statLabel">Questions Answered:</span><span class="statValue">${questionsAnswered}/10</span></div>
+      <div class="statRow"><span class="statLabel">Correct Answers:</span><span class="statValue">${correctAnswers}</span></div>
+      <div class="statRow"><span class="statLabel">Wrong Answers:</span><span class="statValue">${wrongAnswers}</span></div>
+      <div class="statRow"><span class="statLabel">Best Streak:</span><span class="statValue">${bestStreak}x</span></div>
+      <div class="statRow"><span class="statLabel">Accuracy:</span><span class="statValue">${accuracy}%</span></div>
+    `;
+
+    document.getElementById('gameStats').innerHTML = statsHTML;
+    document.getElementById('gameOver').style.display = 'flex';
+    vibrate(500);
+  }
+
+  function quitGame() {
+    // Show game state before quitting
+    if (typeof window.AppInventor !== 'undefined') {
+      const quitData = {
+        action: 'quitGame',
+        currentLevel: currentLevel,
+        zonesCompleted: completedZones.size
+      };
+      window.AppInventor.setWebViewString(JSON.stringify(quitData));
+    }
+  }
+
+
+  // ========================================
+  // DRAWING
+  // ========================================
+  function draw() {
+    if (!currentMaze || currentMaze.length === 0) {
+      return; // Maze not ready yet
+    }
+    ctx.save();
+    ctx.translate(cameraOffsetX, cameraOffsetY);
+    
+    // Draw floor image for all paths first
+    for (let y = 0; y < MAZE_HEIGHT; y++) {
+      for (let x = 0; x < MAZE_WIDTH; x++) {
+        if (currentMaze[y][x] === 0) {
+          if (floorImg.complete) {
+            ctx.drawImage(floorImg, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          } else {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          }
+        }
+      }
+    }
+    
+    // Draw walls on top of floor
+    for (let y = 0; y < MAZE_HEIGHT; y++) {
+      for (let x = 0; x < MAZE_WIDTH; x++) {
+        if (currentMaze[y][x] === 1) {
+          if (wallImg.complete) ctx.drawImage(wallImg, x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          else {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          }
+        }
+      }
+    }
+    
+    // Draw entry point
+    if (entryPoint) {
+      ctx.fillStyle = '#4ade80';
+      ctx.fillRect(
+        entryPoint.col * CELL_SIZE + 2,
+        entryPoint.row * CELL_SIZE + 2,
+        CELL_SIZE - 4,
+        CELL_SIZE - 4
+      );
+      ctx.fillStyle = '#fff';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('START', 
+        entryPoint.col * CELL_SIZE + CELL_SIZE / 2,
+        entryPoint.row * CELL_SIZE + CELL_SIZE / 2 + 3
+      );
+    }
+    
+    // Draw exit point
+    if (exitPoint) {
+      ctx.fillStyle = '#f87171';
+      ctx.fillRect(
+        exitPoint.col * CELL_SIZE + 2,
+        exitPoint.row * CELL_SIZE + 2,
+        CELL_SIZE - 4,
+        CELL_SIZE - 4
+      );
+      ctx.fillStyle = '#fff';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('EXIT', 
+        exitPoint.col * CELL_SIZE + CELL_SIZE / 2,
+        exitPoint.row * CELL_SIZE + CELL_SIZE / 2 + 3
+      );
+    }
+    
+    // Draw decoy zones (look like answer zones with "?" to fool player)
+    decoyZones.forEach(zone => {
+      const cx = zone.col * CELL_SIZE + CELL_SIZE / 2;
+      const cy = zone.row * CELL_SIZE + CELL_SIZE / 2;
+      
+      // Draw exactly like answer zones
+      ctx.fillStyle = '#3b82f6';
+      ctx.fillRect(
+        zone.col * CELL_SIZE + 3,
+        zone.row * CELL_SIZE + 3,
+        CELL_SIZE - 6,
+        CELL_SIZE - 6
+      );
+      
+      // Add "?" mark to fool player
+      ctx.fillStyle = '#fff';
+      ctx.font = '8px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('?', cx, cy + 3);
+    });
+    
+    // Draw answer zones
+    answerZones.forEach((z, i) => {
+      const cx = z.col * CELL_SIZE + CELL_SIZE / 2;
+      const cy = z.row * CELL_SIZE + CELL_SIZE / 2;
+      const r = CELL_SIZE / 2.2;
+
+      if (z.completed) {
+        ctx.fillStyle = '#60a5fa';
+      } else {
+        ctx.fillStyle = '#3b82f6';
+      }
+      ctx.fillRect(
+        z.col * CELL_SIZE + 3,
+        z.row * CELL_SIZE + 3,
+        CELL_SIZE - 6,
+        CELL_SIZE - 6
+      );
+      
+      if (!z.completed) {
+        ctx.fillStyle = '#fff';
+        ctx.font = '8px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('?', cx, cy + 3);
+      }
+    });
+    
+    // Draw player on top of everything
+    const playerX = player.x * CELL_SIZE + CELL_SIZE / 2;
+    const playerY = player.y * CELL_SIZE + CELL_SIZE / 2;
+    const playerSize = CELL_SIZE * 0.8;
+    
+    if (playerImg.complete) {
+      ctx.drawImage(playerImg, playerX - playerSize / 2, playerY - playerSize / 2, playerSize, playerSize);
+    } else {
+      // Fallback if image not loaded
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#75BF7A';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(playerX, playerY, CELL_SIZE / 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+    
+    // Speed boost visual effect removed
+    ctx.restore();
+  }
+
+  // Store gameLoop animation frame ID to prevent multiple loops
+  let gameLoopId = null;
+  let isGameLoopRunning = false;
+
+  function gameLoop() {
+    if (!isGameLoopRunning) return; // Prevent multiple loops
+    updateCamera();
+    draw();
+    gameLoopId = requestAnimationFrame(gameLoop);
+  }
+  
+  function startGameLoop() {
+    if (!isGameLoopRunning) {
+      isGameLoopRunning = true;
+      gameLoopId = requestAnimationFrame(gameLoop);
+    }
+  }
+  
+  function stopGameLoop() {
+    isGameLoopRunning = false;
+    if (gameLoopId !== null) {
+      cancelAnimationFrame(gameLoopId);
+      gameLoopId = null;
+    }
+  }
+
+  // ========================================
+  // INITIALIZATION
+  // ========================================
+  // Store interval ID to prevent multiple intervals
+  let appInventorInterval = null;
+
+  function initGame(startLevel) {
+    // Clear existing interval if any (prevent memory leaks)
+    if (appInventorInterval) {
+      clearInterval(appInventorInterval);
+      appInventorInterval = null;
+    }
+    
+    // Get level from URL parameter, App Inventor, or default to 1
+    const urlParams = new URLSearchParams(window.location.search);
+    const lessonParam = urlParams.get('lesson'); // For viewing lessons only
+    
+    let pendingLevel = null;
+    try {
+      const storedPending = localStorage.getItem('pendingLevel');
+      if (storedPending) {
+        pendingLevel = parseInt(storedPending);
+        localStorage.removeItem('pendingLevel');
+      }
+    } catch (e) {
+      console.warn('Unable to read pending level from storage:', e);
+    }
+    
+    if (startLevel) {
+      currentLevel = Math.max(1, Math.min(TOTAL_LEVELS, parseInt(startLevel)));
+    } else if (lessonParam) {
+      // View specific lesson (for testing/debugging)
+      currentLevel = Math.max(1, Math.min(TOTAL_LEVELS, parseInt(lessonParam)));
+      loadLesson();
+      setTimeout(() => {
+        showLessonScreen();
+      }, 50);
+      appInventorInterval = setInterval(processAppInventorInput, 100);
+      startGameLoop();
+      return; // Exit early - just show lesson, don't initialize game
+    } else {
+      // Check URL parameter first
+      const levelParam = urlParams.get('level');
+      if (levelParam) {
+        const parsedLevel = parseInt(levelParam);
+        if (!isNaN(parsedLevel)) {
+          currentLevel = Math.max(1, Math.min(TOTAL_LEVELS, parsedLevel));
+          console.log('Level loaded from URL parameter:', currentLevel);
+        } else {
+          console.warn('Invalid level parameter in URL:', levelParam, '- defaulting to level 1');
+          currentLevel = 1;
+        }
+      } else if (!isNaN(pendingLevel) && pendingLevel >= 1 && pendingLevel <= TOTAL_LEVELS) {
+        currentLevel = pendingLevel;
+        console.log('Level loaded from pending selection:', currentLevel);
+      } else {
+        // Check App Inventor WebViewString (backup method)
+        if (typeof window.AppInventor !== 'undefined') {
+          try {
+            const input = window.AppInventor.getWebViewString();
+            if (input && input.startsWith('startLevel:')) {
+              const level = parseInt(input.split(':')[1]);
+              if (!isNaN(level)) {
+                currentLevel = Math.max(1, Math.min(TOTAL_LEVELS, level));
+                console.log('Level loaded from App Inventor WebViewString:', currentLevel);
+              } else {
+                console.warn('Invalid level in App Inventor WebViewString:', input, '- defaulting to level 1');
+                currentLevel = 1;
+              }
+            } else {
+              // No level parameter and no App Inventor command - default to level 1
+              console.log('No level parameter found, defaulting to level 1');
+              currentLevel = 1;
+            }
+          } catch (e) {
+            console.error('Error reading App Inventor WebViewString:', e);
+            currentLevel = 1; // Default to level 1 on error
+          }
+        } else {
+          // No App Inventor - default to level 1
+          console.log('No App Inventor detected, defaulting to level 1');
+          currentLevel = 1;
+        }
+      }
+    }
+    
+    
+    // Load lesson content first
+    loadLesson();
+    
+    // Then show the lesson screen
+    setTimeout(() => {
+      showLessonScreen();
+    }, 50);
+    
+    // Set interval and store ID (only one interval should exist)
+    appInventorInterval = setInterval(processAppInventorInput, 100);
+    startGameLoop();
+  }
+
+  function restartGame() {
+    currentLevel = 1;
+    completedZones.clear();
+    attemptedZones.clear();
+    lastAnsweredZone = null;
+    correctAnswers = 0;
+    wrongAnswers = 0;
+    hasMovedYet = false;
+    cameraOffsetX = 0;
+    cameraOffsetY = 0;
+    
+    document.getElementById('gameOver').style.display = 'none';
+    document.getElementById('gameCompleteModal').classList.remove('active');
+    document.getElementById('levelCompleteModal').classList.remove('active');
+    document.getElementById('failureModal').classList.remove('active');
+    document.getElementById('explanationPopup').style.display = 'none';
+    
+    loadLesson();
+    showLessonScreen();
+  }
+
+  // ========================================
+  // EVENT LISTENERS
+  // ========================================
+  // Ensure button is clickable - use multiple methods for reliability
+  const startQuizBtn = document.getElementById('startQuizBtn');
+  if (startQuizBtn) {
+    let isProcessing = false; // Prevent double-clicks
+    
+    const handleStartQuiz = function(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      
+      if (isProcessing) {
+        console.log('Already processing startQuiz');
+        return false;
+      }
+      
+      isProcessing = true;
+      console.log('Start Quiz button triggered'); // Debug log
+      
+      // Call immediately - no delay to prevent flicker
+      if (typeof startQuiz === 'function') {
+        startQuiz();
+      } else {
+        console.error('startQuiz function not found!');
+      }
+      
+      // Reset processing flag after a short delay
+      setTimeout(() => {
+        isProcessing = false;
+      }, 100);
+      
+      return false;
+    };
+    
+    // Method 1: onclick (most reliable)
+    startQuizBtn.onclick = handleStartQuiz;
+    
+    // Method 2: addEventListener click
+    startQuizBtn.addEventListener('click', handleStartQuiz, { passive: false });
+    
+    // Method 3: touchend for mobile
+    startQuizBtn.addEventListener('touchend', handleStartQuiz, { passive: false });
+    
+    // Method 4: Also try mousedown
+    startQuizBtn.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+    }, { passive: false });
+  }
+  
+  // Level complete button - use multiple event handlers for reliability
+  const nextLevelBtn = document.getElementById('nextLevelBtn');
+  if (nextLevelBtn) {
+    nextLevelBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Continue button clicked');
+      nextLevel();
+    });
+    nextLevelBtn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Continue button touched');
+      nextLevel();
+    });
+    // Also set onclick for maximum compatibility
+    nextLevelBtn.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Continue button onclick');
+      nextLevel();
+    };
+  }
+  
+  document.getElementById('restartGameBtn').addEventListener('click', restartGame);
+  
+  // Failure modal buttons - use multiple event handlers for reliability
+  const backToLessonBtn = document.getElementById('backToLessonBtn');
+  if (backToLessonBtn) {
+    backToLessonBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Back to Lesson button clicked');
+      backToLesson();
+    });
+    backToLessonBtn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      backToLesson();
+    });
+    backToLessonBtn.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      backToLesson();
+    };
+  }
+  
+  const retryQuizBtn = document.getElementById('retryQuizBtn');
+  if (retryQuizBtn) {
+    retryQuizBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Retry Quiz button clicked');
+      retryQuiz();
+    });
+    retryQuizBtn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      retryQuiz();
+    });
+    retryQuizBtn.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      retryQuiz();
+    };
+  }
+  
+  // Answer selection
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('answer') && isShowingExplanation) {
+      document.querySelectorAll('.answer').forEach(opt => opt.classList.remove('selected'));
+      e.target.classList.add('selected');
+      // Auto-submit after a short delay to show selection
+      setTimeout(() => {
+        closeExplanationAndContinue();
+      }, 300);
+    }
+  });
+
+  // Handle "Start Game" button in How to Play overlay
+  document.getElementById('btnStartGame').addEventListener('click', () => {
+    console.log('Start Game button clicked, gameState:', gameState); // Debug log
+    
+    const overlay = document.getElementById('howToPlayOverlay');
+    const gameContainer = document.getElementById('gameContainer');
+    
+    // CRITICAL FIX: Hide overlay and show game container FIRST, then initialize canvas
+    // Step 1: Hide overlay immediately
+    if (overlay) {
+      overlay.classList.remove('active');
+      overlay.style.display = 'none';
+      overlay.style.visibility = 'hidden';
+      overlay.style.opacity = '0';
+    }
+    
+    // Step 2: Show game container to make canvas visible
+    if (gameContainer) {
+      gameContainer.style.display = 'flex';
+      gameContainer.style.visibility = 'visible';
+      gameContainer.style.opacity = '1';
+      gameContainer.style.pointerEvents = 'auto';
+    }
+    
+    // Step 3: Wait for DOM to update, then initialize maze
+    setTimeout(() => {
+      console.log('Initializing quiz after overlay dismissed'); // Debug log
+      actuallyStartQuiz();
+    }, 50); // Small delay to ensure DOM is updated
+  });
+
+  document.getElementById('btnPlayAgain').addEventListener('click', restartGame);
+  document.getElementById('btnQuitGame').addEventListener('click', quitGame);
+
+  window.addEventListener('load', () => {
+    // Check if we're coming from lessons.html with a level parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const levelParam = urlParams.get('level');
+    
+    if (levelParam) {
+      // Coming from lessons.html - initialize game with level and show lesson screen
+      initGame();
+    } else if (typeof window.AppInventor === 'undefined') {
+      // Direct access without level parameter - show How to Play
+      document.getElementById('howToPlayOverlay').classList.add('active');
+    document.getElementById('howToPlayOverlay').style.display = 'flex';
+    } else {
+      // App Inventor - initialize game
+      initGame();
+    }
+    
+    window.previousGameState = 'idle';
+    startGameLoop();
+  });
+
+  // ========================================
+  // RESET PROGRESS FUNCTION
+  // ========================================
+  // HOW TO RESET PROGRESS:
+  // 
+  // Method 1: Browser Console (for web testing)
+  //   Open browser console (F12) and type: resetAllProgress()
+  //
+  // Method 2: Manual localStorage Clear (for web testing)
+  //   Open browser console (F12) and type:
+  //   localStorage.removeItem('completedLevels');
+  //   localStorage.removeItem('unlockedLevels');
+  //   Then refresh the page
+  //
+  // Method 3: App Inventor Integration
+  //   In App Inventor, listen for 'resetProgress' command from WebViewString
+  //   When received, clear your TinyDB/SharedPreferences data
+  //   Then reload the WebViewer
+  //
+  // Method 4: Clear Browser Data
+  //   Go to browser settings > Clear browsing data > Cookies and site data
+  //   This will clear localStorage for the site
+  //
+  function resetAllProgress() {
+    // Clear localStorage (for web testing)
+    try {
+      localStorage.removeItem('completedLevels');
+      localStorage.removeItem('unlockedLevels');
+      console.log('All progress has been reset!');
+    } catch (e) {
+      console.error('Error resetting progress:', e);
+    }
+    
+    // Notify App Inventor to clear saved data
+    if (typeof window.AppInventor !== 'undefined') {
+      window.AppInventor.setWebViewString('resetProgress');
+    }
+    
+    // Reload the page to start fresh
+    window.location.reload();
+  }
+  
+  // Expose reset function globally for easy access
+  // You can call this from browser console: resetAllProgress()
+  window.resetAllProgress = resetAllProgress;
+
+  // ========================================
+  // EXPOSE FUNCTIONS FOR APP INVENTOR
+  // ========================================
+  window.restartGame = restartGame;
+  window.endGame = endGame;
+  window.quitGame = quitGame;
+  window.confirmQuitResponse = confirmQuitResponse;
+  window.loadPlayerSettings = loadPlayerSettings;
+
+  // ========================================
+  // SOUND EFFECTS GUIDE FOR MIT APP INVENTOR
+  // ========================================
+  /*
+   * SOUND EFFECT INTEGRATION GUIDE:
+   * 
+   * The game sends sound trigger commands to App Inventor via:
+   * window.AppInventor.setWebViewString('playSound:SOUNDNAME');
+   * 
+   * Sound triggers you need to handle in MIT App Inventor:
+   * 
+   * 1. 'playSound:bgMusic' - Background music (loops continuously during gameplay)
+   *    - Trigger: When game starts (initGame function)
+   *    - Should loop until game ends
+   * 
+   * 2. 'playSound:correct' - Correct answer sound (winning a round)
+   *    - Trigger: When player reaches correct answer zone
+   *    - Short celebratory sound
+   * 
+   * 3. 'playSound:victory' - Congratulations/Victory sound
+   *    - Trigger: When player completes all 10 questions successfully
+   *    - Longer, more impressive celebratory sound
+   * 
+   * 4. 'playSound:wrong' - Wrong answer sound
+   *    - Trigger: When player reaches wrong answer zone
+   *    - Short negative feedback sound
+   * 
+   * 5. 'playSound:hit' - Monster hit sound
+   *    - Trigger: When player collides with monster
+   *    - Impact/hurt sound
+   * 
+   * 6. 'playSound:gameover' - Game over sound
+   *    - Trigger: When player runs out of lives
+   *    - Sad/defeat sound
+   * 
+   * 7. 'playSound:boost' - Speed boost activation
+   *    - Trigger: When player activates speed boost
+   *    - Whoosh/power-up sound
+   * 
+   * 8. 'playSound:streak' - Streak bonus sound
+   *    - Trigger: When player gets 3+ correct answers in a row
+   *    - Exciting bonus sound
+   * 
+   * 9. 'playSound:lifeRegen' - Life regeneration sound
+   *    - Trigger: When a life regenerates after 15 minutes
+   *    - Healing/restoration sound
+   * 
+   * IMPLEMENTATION IN MIT APP INVENTOR:
+   * Use Clock component to check WebViewer.WebViewString every 100ms
+   * Parse the string and trigger appropriate Player component based on sound name
+   * Example blocks structure:
+   * - If WebViewString contains "playSound:bgMusic" -> Player1.Start
+   * - If WebViewString contains "playSound:correct" -> Player2.Start
+   * - etc.
+   */
+</script>
+
+
+
+<script>
+let clickSound = new Audio();
+clickSound.src = "data:audio/wav;base64,UklGRl4AAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AAD///8AAP//AA=="; // soft tap
+
+// Add click sound to answer buttons
+window.addEventListener("DOMContentLoaded", ()=>{
+  document.querySelectorAll('.answer').forEach(btn=>{
+    btn.addEventListener('click', ()=>clickSound.play());
+  });
+  
+});
+
+// ========================================
+// BACK BUTTON HANDLING
+// ========================================
+function handleBackButton() {
+  console.log('handleBackButton called, current state:', gameState);
+  console.log('Video opened status:', window.videoOpened, 'Time since:', window.videoOpened ? (Date.now() - window.videoOpenedTime) : 'N/A');
+  
+  // If video was just opened (within 30 seconds), restore lesson screen first
+  // This handles the case when user presses back button after opening YouTube video
+  if (window.videoOpened && (Date.now() - window.videoOpenedTime < 30000)) {
+    console.log('Video was recently opened, restoring lesson screen immediately');
+    window.videoOpened = false; // Reset flag
+    window.videoOpenedTime = 0;
+    restoreLessonScreen();
+    return;
+  }
+  
+  // If showing How to Play overlay, go back to lesson
+  const overlay = document.getElementById('howToPlayOverlay');
+  if (overlay) {
+    const isOverlayVisible = overlay.style.display === 'flex' || 
+                             overlay.classList.contains('active') ||
+                             (overlay.style.visibility !== 'hidden' && overlay.style.opacity !== '0');
+    
+    if (isOverlayVisible) {
+      console.log('Closing How to Play overlay, returning to lesson');
+      overlay.classList.remove('active');
+      overlay.style.display = 'none';
+      overlay.style.visibility = 'hidden';
+      overlay.style.opacity = '0';
+      overlay.style.pointerEvents = 'none';
+      
+      // Show lesson screen
+      const lessonScreen = document.getElementById('lessonScreen');
+      if (lessonScreen) {
+        lessonScreen.classList.add('active');
+        lessonScreen.style.display = 'flex';
+        lessonScreen.style.visibility = 'visible';
+        lessonScreen.style.opacity = '1';
+        lessonScreen.style.pointerEvents = 'auto';
+      }
+      
+      gameState = 'lesson';
+      return;
+    }
+  }
+  
+  // If in quiz/game, go back to lesson
+  if (gameState === 'quiz' || gameState === 'playing') {
+    console.log('In game, going back to lesson');
+    showLessonScreen();
+    return;
+  }
+  
+  // If in lesson, notify App Inventor to go back to menu (lesson menu / Screen 2)
+  if (gameState === 'lesson') {
+    console.log('In lesson, notifying App Inventor to go back to lesson menu');
+    if (typeof window.AppInventor !== 'undefined') {
+      window.AppInventor.setWebViewString('goBackToMenu');
+    }
+    // Also try to navigate back programmatically if App Inventor doesn't handle it
+    // This ensures the back button works even if App Inventor communication fails
+    return;
+  }
+  
+  // Default: go back to lesson
+  showLessonScreen();
+}
+
+let ignoreInitialPopstate = true;
+window.addEventListener('load', function() {
+  setTimeout(() => {
+    ignoreInitialPopstate = false;
+  }, 250);
+});
+
+// Handle browser back button / Android back button
+window.addEventListener('popstate', function(e) {
+  if (ignoreInitialPopstate) {
+    console.log('Ignoring initial popstate event');
+    return;
+  }
+  console.log('Back button pressed (popstate)');
+  handleBackButton();
+});
+
+// Handle Android back button via App Inventor message
+window.addEventListener('message', function(e) {
+  if (e.data === 'backButtonPressed' || e.data === 'androidBackButton') {
+    console.log('Received back button via message event');
+    handleBackButton();
+  }
+});
+
+// Expose function for App Inventor to call directly
+window.handleBackButton = handleBackButton;
+
+// ========================================
+// BACK BUTTON POLLING (FALLBACK FOR APP INVENTOR)
+// ========================================
+// App Inventor WebView might not always fire message events reliably
+// So we also poll for back button commands as a fallback
+let lastBackButtonValue = '';
+let backButtonPollInterval = null;
+
+function startBackButtonPolling() {
+  // Clear any existing interval
+  if (backButtonPollInterval) {
+    clearInterval(backButtonPollInterval);
+    backButtonPollInterval = null;
+  }
+  
+  // Only poll if App Inventor is available
+  if (typeof window.AppInventor === 'undefined') {
+    return;
+  }
+  
+  backButtonPollInterval = setInterval(function() {
+    try {
+      const currentValue = window.AppInventor.getWebViewString();
+      
+      // Check if it's a back button command and it's new (different from last check)
+      if (currentValue && 
+          typeof currentValue === 'string' && 
+          (currentValue === 'backButtonPressed' || currentValue.includes('backButtonPressed')) &&
+          currentValue !== lastBackButtonValue) {
+        console.log('Detected backButtonPressed via polling fallback');
+        lastBackButtonValue = currentValue;
+        
+        // If video was opened recently, restore lesson screen immediately
+        if (window.videoOpened && (Date.now() - window.videoOpenedTime < 30000)) {
+          console.log('Back button pressed after video opened - restoring lesson screen');
+          window.videoOpened = false;
+          window.videoOpenedTime = 0;
+          restoreLessonScreen();
+        } else {
+          handleBackButton();
+        }
+        
+        // Clear it after processing
+        window.AppInventor.setWebViewString('');
+      } else if (currentValue !== lastBackButtonValue && 
+                 currentValue !== 'backButtonPressed' && 
+                 !currentValue.includes('backButtonPressed')) {
+        // Reset check if value changed to something else
+        lastBackButtonValue = '';
+      }
+    } catch (e) {
+      // Ignore errors in polling
+    }
+  }, 50); // Check every 50ms for faster response
+}
+
+// Start polling when page loads
+if (typeof window.AppInventor !== 'undefined') {
+  startBackButtonPolling();
+} else {
+  // Wait for App Inventor to be available
+  window.addEventListener('load', function() {
+    if (typeof window.AppInventor !== 'undefined') {
+      startBackButtonPolling();
+    }
+  });
+}
+
+// ========================================
+// DETECT RETURN FROM EXTERNAL VIDEO (MOBILE-COMPATIBLE)
+// ========================================
+// Track if video was opened and when
+window.videoOpened = false;
+window.videoOpenedTime = 0;
+
+// Detect when user returns to WebView after opening external video
+// Multiple detection methods for better mobile compatibility
+
+// Method 1: Visibility change (works on most mobile browsers)
+// Only triggers when page becomes visible AND video was opened
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden && window.videoOpened) {
+    // User returned to the app (WebView is visible again)
+    const timeSinceVideoOpened = Date.now() - window.videoOpenedTime;
+    // Only restore if video was opened recently (within 30 seconds)
+    if (timeSinceVideoOpened < 30000 && timeSinceVideoOpened > 500) {
+      console.log('Detected return from video via visibilitychange');
+      // Small delay to ensure page is fully loaded
+      setTimeout(function() {
+        restoreLessonScreen();
+        // Keep videoOpened flag for back button handler to detect
+        // It will be reset when back button is pressed or after timeout
+      }, 100);
+    }
+  }
+});
+
+// Method 2: Window focus (works on mobile when app regains focus)
+// Only triggers once per video opening to avoid multiple restorations
+window.addEventListener('focus', function() {
+  if (window.videoOpened) {
+    const timeSinceVideoOpened = Date.now() - window.videoOpenedTime;
+    if (timeSinceVideoOpened < 30000 && timeSinceVideoOpened > 500) {
+      console.log('Detected return from video via focus event');
+      // Small delay and check game state to avoid bugs
+      setTimeout(function() {
+        restoreLessonScreen();
+        // Keep videoOpened flag for back button handler to detect
+        // It will be reset when back button is pressed or after timeout
+      }, 100);
+    }
+  }
+});
+
+// Method 3: Page visibility API (mobile WebView compatible)
+// Store interval ID to prevent memory leaks
+let visibilityCheckInterval = null;
+if (typeof document.hidden !== 'undefined') {
+  let lastVisibilityState = document.visibilityState;
+  visibilityCheckInterval = setInterval(function() {
+    const currentVisibilityState = document.visibilityState;
+    if (currentVisibilityState === 'visible' && lastVisibilityState === 'hidden' && window.videoOpened) {
+      const timeSinceVideoOpened = Date.now() - window.videoOpenedTime;
+      if (timeSinceVideoOpened < 30000 && timeSinceVideoOpened > 500) {
+        setTimeout(function() {
+          if (gameState === 'lesson' && window.videoOpened) {
+            console.log('Detected return from video via visibility state check');
+            restoreLessonScreen();
+            // Don't reset videoOpened flag - let back button handler use it
+          }
+        }, 100);
+      }
+    }
+    lastVisibilityState = currentVisibilityState;
+  }, 500);
+}
+
+// Method 4: App Inventor WebView specific - check if we're still in lesson state
+// This runs conservatively to avoid interfering with normal navigation
+// Only checks if video was opened recently to avoid bugs
+let lastStateCheck = Date.now();
+let restorationAttempts = 0;
+const MAX_RESTORATION_ATTEMPTS = 3; // Prevent infinite loops
+let stateCheckInterval = null; // Store interval ID to prevent memory leaks
+
+stateCheckInterval = setInterval(function() {
+  // Only check if video was opened recently (within 30 seconds)
+  // This prevents the check from running unnecessarily and causing bugs
+  if (window.videoOpened && (Date.now() - window.videoOpenedTime < 30000)) {
+    const timeSinceLastCheck = Date.now() - lastStateCheck;
+    // Check every 3 seconds (less aggressive to avoid bugs)
+    if (timeSinceLastCheck > 3000 && restorationAttempts < MAX_RESTORATION_ATTEMPTS) {
+      if (gameState === 'lesson') {
+        const lessonScreen = document.getElementById('lessonScreen');
+        if (lessonScreen) {
+          const isHidden = lessonScreen.style.display === 'none' || 
+                           !lessonScreen.classList.contains('active') ||
+                           lessonScreen.style.visibility === 'hidden';
+          
+          // Only restore if actually hidden (avoid unnecessary restorations)
+          if (isHidden) {
+            console.log('Mobile: Detected return from video, restoring lesson screen...');
+            restoreLessonScreen();
+            restorationAttempts++;
+            
+            // Check if restoration was successful (re-check after a short delay)
+            setTimeout(function() {
+              const lessonScreenAfter = document.getElementById('lessonScreen');
+              if (lessonScreenAfter && lessonScreenAfter.classList.contains('active') && 
+                  lessonScreenAfter.style.display === 'flex') {
+                window.videoOpened = false;
+                restorationAttempts = 0;
+              }
+            }, 500);
+          } else {
+            // Screen is already visible, reset flags
+            window.videoOpened = false;
+            restorationAttempts = 0;
+          }
+        }
+      }
+      lastStateCheck = Date.now();
+    }
+  } else if (window.videoOpened && (Date.now() - window.videoOpenedTime >= 30000)) {
+    // Video was opened more than 30 seconds ago, reset flag
+    window.videoOpened = false;
+    restorationAttempts = 0;
+  }
+}, 2000); // Check every 2 seconds (less frequent to reduce overhead)
+
+// Method 5: Touch/click detection - if user interacts after video was opened
+// Only triggers once to avoid multiple restorations
+let touchRestored = false;
+document.addEventListener('touchstart', function() {
+  if (window.videoOpened && !touchRestored) {
+    const timeSinceVideoOpened = Date.now() - window.videoOpenedTime;
+    if (timeSinceVideoOpened > 1000 && timeSinceVideoOpened < 30000) {
+      // User touched screen after video was opened (likely returned)
+      if (gameState === 'lesson') {
+        restoreLessonScreen();
+        window.videoOpened = false;
+        touchRestored = true;
+        // Reset flag after 5 seconds
+        setTimeout(function() { touchRestored = false; }, 5000);
+      }
+    }
+  }
+}, { once: false, passive: true });
+
+// Helper function to restore lesson screen (robust and reliable)
+function restoreLessonScreen() {
+  console.log('restoreLessonScreen called, videoOpened:', window.videoOpened);
+  
+  // Force gameState to lesson if we're restoring from video
+  if (window.videoOpened) {
+    gameState = 'lesson';
+  }
+  
+  if (gameState === 'lesson') {
+    const lessonScreen = document.getElementById('lessonScreen');
+    const overlay = document.getElementById('howToPlayOverlay');
+    const gameContainer = document.getElementById('gameContainer');
+    const controlsContainer = document.getElementById('controlsContainer');
+    const failureModal = document.getElementById('failureModal');
+    
+    // Hide all modals
+    if (failureModal) {
+      failureModal.classList.remove('active');
+      failureModal.style.display = 'none';
+    }
+    
+    // Ensure overlay is hidden
+    if (overlay) {
+      overlay.classList.remove('active');
+      overlay.style.display = 'none';
+      overlay.style.visibility = 'hidden';
+      overlay.style.opacity = '0';
+      overlay.style.pointerEvents = 'none';
+    }
+    
+    // Ensure game container is hidden
+    if (gameContainer) {
+      gameContainer.style.display = 'none';
+      gameContainer.style.visibility = 'hidden';
+      gameContainer.style.opacity = '0';
+      gameContainer.style.pointerEvents = 'none';
+    }
+    
+    // Hide controls
+    if (controlsContainer) {
+      controlsContainer.style.display = 'none';
+      controlsContainer.style.visibility = 'hidden';
+      controlsContainer.style.opacity = '0';
+    }
+    
+    // Show lesson screen with all necessary properties
+    if (lessonScreen) {
+      lessonScreen.style.display = 'flex';
+      lessonScreen.style.visibility = 'visible';
+      lessonScreen.style.opacity = '1';
+      lessonScreen.style.pointerEvents = 'auto';
+      lessonScreen.classList.add('active');
+      
+      // Ensure Start Quiz button is clickable
+      const startQuizBtn = document.getElementById('startQuizBtn');
+      if (startQuizBtn) {
+        startQuizBtn.style.pointerEvents = 'auto';
+        startQuizBtn.style.cursor = 'pointer';
+        startQuizBtn.disabled = false;
+      }
+      
+      console.log('Lesson screen restored successfully after video return');
+    }
+  }
+}
+</script>
+
+</body>
+</html>
+
+
+
